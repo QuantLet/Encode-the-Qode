@@ -1,0 +1,6 @@
+data/QuantLet/*
+data/QuantLet/
+data/sorted/
+data/python_quantlets.csv
+.DS_Store
+token.txt
