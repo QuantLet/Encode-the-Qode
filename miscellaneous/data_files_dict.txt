@@ -5,5 +5,6 @@ load_data_from_git.ipynb = read the API token, pull all the public repositories 
 parse_repos_to_df.ipynb = from prepared folders, read metainfo and parse it and add the sourcecode as list of source code files, starting with the "BEGINNING OF CODE" element -> save as python_quantlets.csv
 parse_df_source_code.ipynb = read the python_quantlets.csv and parse the source code: extract function na,es, function args, comments, dostrings save as parsed_source_code_df
 
+parsed_source_code_df_v2.csv = without the Sourcecode column
 
 COLAB (OR GPU SERVER):git stat
