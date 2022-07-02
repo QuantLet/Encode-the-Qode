@@ -1,0 +1,21 @@
+Name of Quantlet: 'parse_repos_to_df'
+
+Published in: 'TBD'
+
+Description: 'Convert quantlets, Source code and metainfo files, to pandas data frame '
+
+Keywords:
+- pandas
+- Github
+- data frame
+- Quantlet
+- ast
+
+Author: 'Elizaveta Zinovyeva'
+
+Submitted:  '02. Jul 2022, Elizaveta Zinovyeva'
+
+
+Input: '../data/...'
+
+Output:  '../data/python_quantlets.csv'
