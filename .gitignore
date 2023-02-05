@@ -8,3 +8,8 @@ token.txt
 data/Q_test
 data/*.csv
 data/*.json
+quantlet2keywords/checkpoint-16/*
+quantlet2keywords/checkpoint-16/
+quantlet2keywords/*checkpoints
+quantlet2keywords/*checkpoints
+quantlet2keywords/.ipynb_checkpoints
