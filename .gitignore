@@ -5,4 +5,6 @@ data/QuantLet_to_parse
 data/python_quantlets.csv
 .DS_Store
 token.txt
-data/*
+data/Q_test
+data/*.csv
+data/*.json
