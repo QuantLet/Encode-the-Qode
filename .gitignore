@@ -13,3 +13,11 @@ quantlet2keywords/checkpoint-16/
 quantlet2keywords/*checkpoints
 quantlet2keywords/*checkpoints
 quantlet2keywords/.ipynb_checkpoints
+data/raw/Conala/
+data/raw/CodeSearchNet/
+data/raw/Conala/*
+data/raw/CodeSearchNet/*
+data/preprocessed/Conala/*
+data/preprocessed/CodeSearchNet/*
+data/preprocessed/Conala/
+data/preprocessed/CodeSearchNet/
