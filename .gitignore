@@ -2,7 +2,7 @@ data/QuantLet/*
 data/QuantLet/
 data/sorted/
 data/QuantLet_to_parse
-data/python_quantlets.csv
+data/preprocessed/Quantlet/python_quantlets.csv
 .DS_Store
 token.txt
 data/Q_test
