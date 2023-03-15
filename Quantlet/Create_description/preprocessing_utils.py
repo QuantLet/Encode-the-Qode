@@ -1,0 +1,141 @@
+import os
+import json
+import pickle
+import pandas as pd
+from IPython.display import display
+from torch.utils.data import Dataset
+
+def check_if_import(code_snippet, language='py'):
+    
+    """Check if code_snippet is part of import section"""
+    is_import = False
+
+    if language == 'py':
+        if code_snippet.startswith(('import', 'from', 'pip', '!pip')):
+            is_import = True
+    elif language == 'r':
+        if code_snippet.startswith(('library', 'install', 'source', )):
+            is_import = True
+    elif language == 'm':
+        if code_snippet.startswith(('load', 'import')):
+            is_import = True
+        
+    return is_import
+        
+    
+def check_if_part_of_block(code_snippet, language='py'):
+    
+    """Check if code_snippet is part of a block of code"""
+    is_block = False
+    if language == 'py':
+        if code_snippet.startswith(
+            (
+            ' ', '\t', ')', '}', ']', 'else', 'elif', 'except', 'finally'
+            )
+            ):
+            is_block = True
+    elif language == 'r':
+        pass
+    elif language == 'm':
+        pass
+    
+def tokenize_block(code_list):
+    
+    """Tokenize a block of code"""
+    
+    new_list = []
+    import_flag = False
+
+    for code_snippet in code_list: 
+
+        if check_if_part_of_block(code_snippet):
+            
+            new_list[-1] = new_list[-1] + code_snippet
+            continue
+        elif check_if_import(code_snippet):
+            if import_flag:
+                new_list[-1] = new_list[-1] + code_snippet
+            else:
+                new_list.append(code_snippet)
+                import_flag = True
+            continue
+        else:
+            new_list.append(code_snippet)
+            import_flag = False
+
+    return new_list
+
+
+def load_script(code_script_path):
+
+    with open(os.path.join(code_script_path), 'rb') as f:
+        code = f.readlines()
+
+    code = [item for item in code if len(item)>0]
+    code = [line.decode() for line in code]
+    code = [item.replace('\n', '') for item in code if item.endswith('\n')]
+    code = [f'{item}\n' for item in code]
+    #code = ''.join(code)
+    return code
+
+def load_ipynb(code_script_path):
+
+    """Load ipynb file and return a list of code snippets"""
+
+    with open(code_script_path, 'rb') as f:
+        data = json.load(f)
+    
+    data = pd.json_normalize(data, record_path='cells')
+
+    data = data[data['cell_type'].isin(['code', 'markdown'])]
+    data = data[data['source'].notna()]
+    data = data[data['source'].apply(lambda x: len(x) > 0)]
+    
+    data = [item for sublist in data.source.values for item in sublist]
+    data = [item.replace('\n', '') for item in data if item.endswith('\n')]
+    data = [item for item in data if len(item)>0]
+
+    data = [f'{item}\n' for item in data]
+    #data = ' \n'.join(data)
+    #data = tokenize_block(data)
+    #data = ''.join(data)
+    
+    return data
+
+def load_code(code_script_path, language='py'):
+    
+    """Load code from file and return a list of code snippets"""
+    if language == 'py':
+        code = load_script(code_script_path)
+    elif language == 'r':
+        code = load_script(code_script_path)
+    elif language == 'm':
+        code = load_script(code_script_path)
+    elif language == 'ipynb':
+        code = load_ipynb(code_script_path)
+    else:
+        raise ValueError('Language not supported')
+    
+    return code
+
+class QuantletDataset(Dataset):
+    def __init__(self, parsed_Qs_file):
+        with open(parsed_Qs_file, 'rb') as f:
+            self.parsed_Qs_file = pickle.load(f)
+        
+        # make sure the index is continuous    
+        self.parsed_Qs_file = self.parsed_Qs_file.reset_index(drop=True)
+
+        self.parsed_Qs_file.type_script = self.parsed_Qs_file.type_script.str.to_lower()
+        self.parsed_Qs_file = self.parsed_Qs_file[self.parsed_Qs_file.type_script.isin(['py', 'r', 'm', 'ipynb'])]
+    def __len__(self):
+        return len(self.parsed_Qs_file.script_name)
+
+    def __getitem__(self, idx):
+        subset = self.parsed_Qs_file.iloc[idx, :]
+        code_script_path = os.path.join(subset.folder_name, subset.script_name)
+        code_snippet = load_code(code_script_path, subset.type_script.iloc)
+        return code_snippet
+    
+    def show_df(self):
+        return display(self.parsed_Qs_file) 
