@@ -1,5 +1,9 @@
 data/QuantLet/*
 data/QuantLet/
+data/raw/*
+data/raw/
+data/preprocessed/*
+data/preprocessed/
 data/sorted/
 data/QuantLet_to_parse
 data/preprocessed/Quantlet/python_quantlets.csv
@@ -22,3 +26,4 @@ data/preprocessed/CodeSearchNet/*
 data/preprocessed/Conala/
 data/preprocessed/CodeSearchNet/
 QuantLet/Load-Quantlet-Data-From-Git/token.txt
+data/QuantLet.zip
