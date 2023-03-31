@@ -31,3 +31,7 @@ data/QuantLet.zip
 **/*.pyc
 **/.ipynb_checkpoints
 **/__pycache__
+appdirs*
+
+BART_learning/results
+BART_learning/wandb
