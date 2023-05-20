@@ -35,3 +35,7 @@ appdirs*
 
 BART_learning/results
 BART_learning/wandb
+
+
+Quantlet/code_description2project_description/results
+Quantlet/code_description2project_description/results/*
