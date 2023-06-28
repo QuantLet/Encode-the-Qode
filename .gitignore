@@ -1,5 +1,9 @@
 data/QuantLet/*
 data/QuantLet/
+data/QuantLet_light/*
+data/QuantLet_light/
+appdirs-1..4.3
+CodeSearchNet_analysis/EDA_ch.ipynb
 data/raw/*
 data/raw/
 data/preprocessed/*
