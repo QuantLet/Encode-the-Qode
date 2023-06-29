@@ -173,3 +173,34 @@ def set_seed(seed: int):
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    
+    
+def parse_meta(row): 
+    row = row['metainfo_file']
+    if row=='empty':
+        return ['','','','']
+    dict_keys = list(row.keys())
+    dict_key_n = [k.lower() for k in dict_keys]
+    name_idx = np.where(['name' in k for k in dict_key_n])[0]
+    desc_idx = np.where(['desc' in k for k in dict_key_n])[0]
+    key_idx = np.where(['keyw' in k for k in dict_key_n])[0]
+
+    dict_keys_used = []
+
+    if len(name_idx) > 0:
+        name = row[dict_keys[name_idx[0]]]
+        dict_keys_used.append(name)
+    else:
+        name = ''
+    if len(desc_idx) > 0:
+        desc = row[dict_keys[desc_idx[0]]]
+        dict_keys_used.append(desc)
+    else:
+        desc = ''
+    if len(key_idx) > 0:
+        key = row[dict_keys[key_idx[0]]]
+        dict_keys_used.append(key)
+    else:
+        key = ''
+    other = {k: row[k] for k in dict_keys if k not in dict_keys_used}
+    return [name, desc, key, other]
