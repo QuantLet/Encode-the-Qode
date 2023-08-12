@@ -43,3 +43,15 @@ BART_learning/wandb
 
 Quantlet/code_description2project_description/results
 Quantlet/code_description2project_description/results/*
+
+Quantlet/code_description2project_description/logs
+Quantlet/code_description2project_description/logs/*
+
+Quantlet/Domain_PreTraining/wandb
+Quantlet/Domain_PreTraining/wandb/*
+
+Quantlet/Domain_PreTraining/logs
+Quantlet/Domain_PreTraining/logs/*
+
+Quantlet/Domain_PreTraining/results
+Quantlet/Domain_PreTraining/results/*

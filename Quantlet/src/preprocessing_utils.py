@@ -185,6 +185,7 @@ def parse_meta(row):
     name_idx = np.where(['name' in k for k in dict_key_n])[0]
     desc_idx = np.where(['desc' in k for k in dict_key_n])[0]
     key_idx = np.where(['keyw' in k for k in dict_key_n])[0]
+    auth_idx = np.where(['auth' in k for k in dict_key_n])[0]
 
     dict_keys_used = []
 
@@ -203,8 +204,15 @@ def parse_meta(row):
         dict_keys_used.append(key)
     else:
         key = ''
+        
+    if len(auth_idx) > 0:
+        aut = row[dict_keys[auth_idx[0]]]
+        dict_keys_used.append(aut)
+    else:
+        aut = ''
+        
     other = {k: row[k] for k in dict_keys if k not in dict_keys_used}
-    return [name, desc, key, other]
+    return [name, desc, key, aut, other]
 
 def batch_tokenize_preprocess(batch,
                               tokenizer,
