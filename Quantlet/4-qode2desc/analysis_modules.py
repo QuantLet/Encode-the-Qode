@@ -33,7 +33,7 @@ import evaluate
 import sys
 sys.path.append('../src')
 
-import preprocessing_utilstra
+import preprocessing_utils
 
 def batch_tokenize_preprocess(batch,
                               tokenizer,
@@ -79,45 +79,47 @@ def postprocess_text(preds, labels):
 
     return preds, labels
     
-def compute_metrics(eval_preds, metrics_list=['rouge', 'bleu']):
-
-    preds, labels = eval_preds
-
-    if isinstance(preds, tuple):
-        preds = preds[0]
-
-    decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
-
-    # Replace -100 in the labels as we can't decode them.
-    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-
-    # POST PROCESSING
-    decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
-
-    results_dict = {}
-    for m in metrics_list:
-        metric = evaluate.load(m)
-
-        if m=='bleu':
-            result = metric.compute(
-              predictions=decoded_preds, references=decoded_labels
-           )
-        elif m=='rouge':
-            result = metric.compute(
-                predictions=decoded_preds, references=decoded_labels, use_stemmer=True
-            )
-        result = {key: value for key, value in result.items() if key!='precisions'}
-
-        prediction_lens = [
-            np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
-        ]
-        result["gen_len"] = np.mean(prediction_lens)
-        result = {k: round(v, 4) for k, v in result.items()}
-        results_dict.update(result)
-    return results_dict
+def compute_metric_with_params(tokenizer, metrics_list=['rouge', 'bleu']):
+    def compute_metrics(eval_preds):
     
-def generate_summary(test_samples, model):
+        preds, labels = eval_preds
+    
+        if isinstance(preds, tuple):
+            preds = preds[0]
+    
+        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
+    
+        # Replace -100 in the labels as we can't decode them.
+        labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+    
+        # POST PROCESSING
+        decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
+    
+        results_dict = {}
+        for m in metrics_list:
+            metric = evaluate.load(m)
+    
+            if m=='bleu':
+                result = metric.compute(
+                  predictions=decoded_preds, references=decoded_labels
+               )
+            elif m=='rouge':
+                result = metric.compute(
+                    predictions=decoded_preds, references=decoded_labels, use_stemmer=True
+                )
+            result = {key: value for key, value in result.items() if key!='precisions'}
+    
+            prediction_lens = [
+                np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
+            ]
+            result["gen_len"] = np.mean(prediction_lens)
+            result = {k: round(v, 4) for k, v in result.items()}
+            results_dict.update(result)
+        return results_dict
+    return compute_metrics
+    
+def generate_summary(test_samples, model, tokenizer, encoder_max_length):
     inputs = tokenizer(
         test_samples["input_sequence"],
         padding="max_length",
@@ -131,14 +133,14 @@ def generate_summary(test_samples, model):
     output_str = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return outputs, output_str
 
-def analyze_scs_module(analysis_name: str,
+def scs_analyze(analysis_name: str,
                          model_name: str, 
                          train_data_path: str, 
                          val_data_path:   str,
                          train_data_name: str,
                          val_data_name: str,
                          encoder_max_length: int, 
-                         decoder_max_length: int
+                         decoder_max_length: int,
                          random_state: int, 
                          learning_rate: float=5e-5,
                          epochs: int=4, 
@@ -154,10 +156,15 @@ def analyze_scs_module(analysis_name: str,
                          
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
+    
+    if model_name=='CodeT5':
+        model_name="Salesforce/codet5-base-multi-sum"
+        
+    elif model_name=='CodeTrans':
+        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"
                          
     model = AutoModelWithLMHead.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name,
-                                              skip_special_tokens=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
     model.to(device)
     print(device)
     
@@ -178,7 +185,10 @@ def analyze_scs_module(analysis_name: str,
     
     train_data = train_data_txt.map(
         lambda batch: batch_tokenize_preprocess(
-            batch, tokenizer, encoder_max_length, decoder_max_length
+            batch, 
+            tokenizer=tokenizer,
+            max_input_length=encoder_max_length,
+            max_output_length=decoder_max_length
         ),
         batch_size=8,
         batched=True,
@@ -187,35 +197,47 @@ def analyze_scs_module(analysis_name: str,
     
     validation_data = validation_data_txt.map(
         lambda batch: batch_tokenize_preprocess(
-            batch, tokenizer, encoder_max_length, decoder_max_length
+            batch, 
+            tokenizer=tokenizer,
+            max_input_length=encoder_max_length,
+            max_output_length=decoder_max_length
         ),
         batched=True,
         remove_columns=validation_data_txt.column_names,
     )
     
+    # CREATE ANALYSIS FOLDER
+    os.mkdir(f'analysis_report_{analysis_name}')
+    
+    
     # SUBSAMPLE FOR GENERATION BEFORE TUNING
     test_samples = validation_data_txt.select(range(20))
-    summaries_before_tuning = generate_summary(test_samples, model)[1]
+    summaries_before_tuning = generate_summary(test_samples, 
+                                                model, 
+                                                tokenizer, 
+                                                encoder_max_length)[1]
     
     training_args = Seq2SeqTrainingArguments(
-    output_dir="results",
-    num_train_epochs=epochs,
-    do_train=True,
-    do_eval=True,
-    per_device_train_batch_size=train_batch,
-    per_device_eval_batch_size=eval_batch,
-    learning_rate=learning_rate,
-    warmup_steps=warmup_steps,
-    weight_decay=weight_decay,
-    label_smoothing_factor=label_smooting,
-    predict_with_generate=predict_generate,
-    logging_dir="logs",
-    logging_steps=logging_stes,
-    save_total_limit=save_total_lim,
-    report_to=None
+        output_dir=f"analysis_report_{analysis_name}/results",
+        num_train_epochs=epochs,
+        do_train=True,
+        do_eval=True,
+        per_device_train_batch_size=train_batch,
+        per_device_eval_batch_size=eval_batch,
+        learning_rate=learning_rate,
+        warmup_steps=warmup_steps,
+        weight_decay=weight_decay,
+        label_smoothing_factor=label_smooting,
+        predict_with_generate=predict_generate,
+        logging_dir=f"analysis_report_{analysis_name}/logs",
+        logging_steps=logging_stes,
+        save_total_limit=save_total_lim,
+        report_to=None
     )
     
     data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
+    
+    compute_metrics = compute_metric_with_params(tokenizer)
     
     trainer = Seq2SeqTrainer(
         model=model,
@@ -242,7 +264,10 @@ def analyze_scs_module(analysis_name: str,
     results_fine_tune_df.loc[0, :] = results_fine_tune_df.loc[0, :].apply(lambda x: round(x, 3))
     print(results_fine_tune_df)
     
-    summaries_after_tuning = generate_summary(test_samples, model)[1]
+    summaries_after_tuning = generate_summary(test_samples, 
+                                             model,
+                                             tokenizer,
+                                             encoder_max_length)[1]
     
     for i, description in enumerate(test_samples["output_sequence"]):
       print('_'*10)
@@ -253,7 +278,6 @@ def analyze_scs_module(analysis_name: str,
       print('\n')
       
     # CREATE REPORT
-    os.mkdir(f'analysis_report_{analysis_name}')
     with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
         
     # Writing results for Latex
@@ -268,10 +292,36 @@ def analyze_scs_module(analysis_name: str,
         results_file.write(results_fine_tune_df)
         
         for i, description in enumerate(test_samples["output_sequence"]):
-            print('_'*10)
-            print(f'Original: {description}')
-            print(f'Summary before Tuning: {summaries_before_tuning[i]}')
-            print(f'Summary after Tuning: {summaries_after_tuning[i]}')
-            print('_'*10)
-            print('\n')
+            results_file.write('_'*10)
+            results_file.write(f'Original: {description}')
+            results_file.write(f'Summary before Tuning: {summaries_before_tuning[i]}')
+            results_file.write(f'Summary after Tuning: {summaries_after_tuning[i]}')
+            results_file.write('_'*10)
+            results_file.write('\n')
+            
+    # STORE PARAMS
+    with open(f'analysis_report_{analysis_name}/config.json', "w") as params_file:
+        config_params = {'analysis_name': analysis_name, 
+                         'model_name': model_name, 
+                         'train_data_path': train_data_path, 
+                         'val_data_path':   val_data_path,
+                         'train_data_name': train_data_name,
+                         'val_data_name': val_data_name,
+                         'encoder_max_length': encoder_max_length, 
+                         'decoder_max_length': decoder_max_length,
+                         'random_state': random_state, 
+                         'learning_rate': learning_rate,
+                         'epochs': epochs, 
+                         'train_batch': train_batch, 
+                         'eval_batch': eval_batch,
+                         'warmup_steps': warmup_steps, 
+                         'weight_decay': weight_decay,
+                         'logging_stes': logging_stes,
+                         'save_total_lim': save_total_lim,
+                         'label_smooting': label_smooting,
+                         'predict_generate': predict_generate,
+                         'eval_columns_list': eval_columns_list
+                         }
+        json.dump(config_params, params_file)
+                         
         
