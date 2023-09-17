@@ -1,0 +1,103 @@
+/usr/local/lib/python3.10/dist-packages/transformers/optimization.py:411: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/transformers/generation/utils.py:1369: UserWarning: Using `max_length`'s default (20) to control the generation length. This behaviour is deprecated and will be removed from the config in v5 of Transformers -- we recommend using `max_new_tokens` to control the maximum length of the generation.
+  warnings.warn(
+__________
+Original: Comparing Different Deep Learning Architectures for Classification of Chest Radiographs
+Summary before Tuning: and other research tools.
+Summary after Tuning: Chest Radiograph Classification Using Deep Neural Networks
+__________
+__________
+Original: TGHop: An Explainable, Efficient and Lightweight Method for Texture Generation
+Summary before Tuning: The results are published.
+Summary after Tuning: TGHop: An Explainable and Efficient
+__________
+__________
+Original: Unidentified Floating Object detection in maritime environment using dictionary learning
+Summary before Tuning: the study authors said.
+Summary after Tuning: Denoising and Denoising Noise and Salient Structures
+__________
+__________
+Original: Understanding Graph Neural Networks from Graph Signal Denoising Perspectives
+Summary before Tuning: The paper is published.
+Summary after Tuning: Graph Neural Networks are Implicitly Solving Graph Signal De
+__________
+__________
+Original: Self-Supervised Regional and Temporal Auxiliary Tasks for Facial Action Unit Recognition
+Summary before Tuning: and the AU properties.
+Summary after Tuning: Self-Supervised Auxiliary Task Learning for
+__________
+__________
+Original: SE(3)-Transformers: 3D Roto-Translation Equivariant Attention Networks
+Summary before Tuning: ( 1 ).
+Summary after Tuning: SE(3)-Transformer: 3D Roto-Translations
+__________
+__________
+Original: Articulated Shape Matching Using Laplacian Eigenfunctions and Unsupervised Point Registration
+Summary before Tuning: The results are interesting.
+Summary after Tuning: Dense Shape Matching with Eigenfunctions
+__________
+__________
+Original: Entropic Risk Constrained Soft-Robust Policy Optimization
+Summary before Tuning: and risk management strategies.
+Summary after Tuning: Entropic Risk  constrained Policy Gradient and Actor-Cri
+__________
+__________
+Original: Long-Short Transformer: Efficient Transformers for Language and Vision
+Summary before Tuning: ) by hand.
+Summary after Tuning: Long-Short Transformer: Efficient Self-Attention
+__________
+__________
+Original: DROCC: Deep Robust One-Class Classification
+Summary before Tuning: a variety of solutions.
+Summary after Tuning: Deep Robust One-Class Classification
+__________
+__________
+Original: A hybrid approach of interpolations and CNN to obtain super-resolution
+Summary before Tuning: The results are similar.
+Summary after Tuning: Learning to Improve Spatial Resolution in Natural Images using Nearest
+__________
+__________
+Original: Explainable cardiac pathology classification on cine MRI with motion characterization by semi-supervised learning of apparent flow
+Summary before Tuning: The results are presented.
+Summary after Tuning: Explainable cardiac pathology classification using cine MRI features
+__________
+__________
+Original: An End-to-end Framework For Low-Resolution Remote Sensing Semantic Segmentation
+Summary before Tuning: The paper notes.
+Summary after Tuning: Super-Resolution and Semantic Segmentation for Remote Sensing
+__________
+__________
+Original: Multiple Exemplars-based Hallucinationfor Face Super-resolution and Editing
+Summary before Tuning: The paper is incomplete.
+Summary after Tuning: Face Super-Resolution with Exemplars
+__________
+__________
+Original: The Location of Optimal Object Colors with More Than Two Transitions (Preprint)
+Summary before Tuning: "" CMFs."
+Summary after Tuning: A peer-reviewed analysis of the CIE 1931 color matching
+__________
+__________
+Original: Actions Generation from Captions
+Summary before Tuning: The results are interesting.
+Summary after Tuning: Action Generation Data Set for Caption-to-Action Generation
+__________
+__________
+Original: Deep Preset: Blending and Retouching Photos with Color Style Transfer
+Summary before Tuning: The study is interesting.
+Summary after Tuning: Deep Preset: Learning Low-Level Color Style Transfer with
+__________
+__________
+Original: CommPOOL: An Interpretable Graph Pooling Framework for Hierarchical Graph Representation Learning
+Summary before Tuning: and the current baseline.
+Summary after Tuning: CommPOOL: An Interpretable Graph Pooling Framework for Hierarchical
+__________
+__________
+Original: Helicopter Track Identification with Autoencoder
+Summary before Tuning: the data representations.
+Summary after Tuning: Autoencoder-based Deep Learning for Aircraft Track Identification
+__________
+__________
+Original: Deeply learning molecular structure-property relationships using attention- and gate-augmented graph convolutional network
+Summary before Tuning: the new model works.
+Summary after Tuning: Graph Convolutional Networks for Molecular Structure-Property

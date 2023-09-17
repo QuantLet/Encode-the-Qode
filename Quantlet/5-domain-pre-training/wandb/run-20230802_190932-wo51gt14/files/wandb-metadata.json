@@ -1,0 +1,105 @@
+{
+    "os": "Linux-5.15.109+-x86_64-with-glibc2.35",
+    "python": "3.10.12",
+    "heartbeatAt": "2023-08-02T19:09:42.665397",
+    "startedAt": "2023-08-02T19:09:32.686747",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "codetrans_domain_ftipynb",
+    "colab": "https://colab.research.google.com/notebook#fileId=1tSgk495PzB3NFQVn5N5PvT4vnV8LHw2O",
+    "git": {
+        "remote": "https://github.com/QuantLet/Encode-the-Qode.git",
+        "commit": "85418a44bc3398defb1b4c2e012ba81c692e7979"
+    },
+    "email": null,
+    "root": "/content/drive/MyDrive/ColabNotebooks/IRTG/Encode_the_Qode/Encode-the-Qode",
+    "host": "c26d59c79e1b",
+    "username": "root",
+    "executable": "/usr/bin/python3",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 2200.214,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2200.214,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 166.77415084838867,
+        "used": 25.65306854248047
+    },
+    "gpu": "NVIDIA A100-SXM4-40GB",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA A100-SXM4-40GB",
+            "memory_total": 42949672960
+        }
+    ],
+    "memory": {
+        "total": 83.48074722290039
+    }
+}
