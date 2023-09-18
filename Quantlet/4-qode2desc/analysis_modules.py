@@ -150,7 +150,7 @@ def scs_analyze(analysis_name: str,
                          weight_decay: float=0.1,
                          logging_stes: int=100,
                          save_total_lim: int=3,
-                         label_smooting: bool=True,
+                         label_smooting: float = 0.1,
                          predict_generate: bool=True,
                          eval_columns_list: list=['eval_loss', 'eval_rouge1']): 
                          
