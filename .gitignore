@@ -1,3 +1,4 @@
+tt.txt
 Quantlet/5-domain-pre-training/results/
 data/QuantLet/*
 data/QuantLet/
@@ -56,3 +57,4 @@ Quantlet/Domain_PreTraining/logs/*
 
 Quantlet/Domain_PreTraining/results
 Quantlet/Domain_PreTraining/results/*
+file.pem
