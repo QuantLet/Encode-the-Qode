@@ -8,8 +8,6 @@ appdirs-1..4.3
 CodeSearchNet_analysis/EDA_ch.ipynb
 data/raw/*
 data/raw/
-data/preprocessed/*
-data/preprocessed/
 data/sorted/
 data/QuantLet_to_parse
 data/preprocessed/Quantlet/python_quantlets.csv
@@ -18,10 +16,8 @@ token.txt
 data/Q_test
 data/*.csv
 data/*.json
-quantlet2keywords/checkpoint-16/*
-quantlet2keywords/checkpoint-16/
-quantlet2keywords/*checkpoints
-quantlet2keywords/*checkpoints
+
+data/preprocessed/Quantlet/deprecated_files
 
 data/raw/Conala/
 data/raw/CodeSearchNet/
