@@ -281,15 +281,15 @@ def scs_analyze(analysis_name: str,
     with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
         
     # Writing results for Latex
-        results_file.write("Results Zero Shot")
-        results_file.write('_'*10)
-        results_file.write(r'\n')
-        results_file.write(results_zero_shot_df)
+        #results_file.write("Results Zero Shot")
+        #results_file.write('_'*10)
+        #results_file.write(r'\n')
+        #results_file.write(results_zero_shot_df)
         
-        results_file.write("Results Fine Tuning")
-        results_file.write('_'*10)
-        results_file.write(r'\n')
-        results_file.write(results_fine_tune_df)
+        #results_file.write("Results Fine Tuning")
+        #results_file.write('_'*10)
+        #results_file.write(r'\n')
+        #results_file.write(results_fine_tune_df)
         
         for i, description in enumerate(test_samples["output_sequence"]):
             results_file.write('_'*10)
@@ -298,7 +298,10 @@ def scs_analyze(analysis_name: str,
             results_file.write(f'Summary after Tuning: {summaries_after_tuning[i]}')
             results_file.write('_'*10)
             results_file.write('\n')
-            
+    
+    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_zero_shot.csv', index=False)
+    results_fine_tune_df.to_csv(f'analysis_report_{analysis_name}/results_fine_tune.csv', index=False)
+    
     # STORE PARAMS
     with open(f'analysis_report_{analysis_name}/config.json', "w") as params_file:
         config_params = {'analysis_name': analysis_name, 
