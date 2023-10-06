@@ -152,8 +152,14 @@ def scs_analyze(analysis_name: str,
                          save_total_lim: int=3,
                          label_smooting: float = 0.1,
                          predict_generate: bool=True,
-                         eval_columns_list: list=['eval_loss', 'eval_rouge1']): 
+                         eval_columns_list: list=['eval_loss', 'eval_rouge1'],
+                         save_strategy='no',
+                         load_best_model_at_end=True): 
                          
+    # CREATE ANALYSIS FOLDER
+    os.mkdir(f'analysis_report_{analysis_name}')
+    print(analysis_name)
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     
@@ -168,8 +174,6 @@ def scs_analyze(analysis_name: str,
     model.to(device)
     print(device)
     
-    
-    
     train_dataset = load_dataset("json",
                              data_files=train_data_name,
                              field="data",
@@ -181,6 +185,7 @@ def scs_analyze(analysis_name: str,
                                 data_dir=val_data_path)
                                 
     train_data_txt = train_dataset['train']
+        
     validation_data_txt = test_dataset['train']
     
     train_data = train_data_txt.map(
@@ -206,9 +211,6 @@ def scs_analyze(analysis_name: str,
         remove_columns=validation_data_txt.column_names,
     )
     
-    # CREATE ANALYSIS FOLDER
-    os.mkdir(f'analysis_report_{analysis_name}')
-    
     
     # SUBSAMPLE FOR GENERATION BEFORE TUNING
     test_samples = validation_data_txt.select(range(20))
@@ -216,6 +218,7 @@ def scs_analyze(analysis_name: str,
                                                 model, 
                                                 tokenizer, 
                                                 encoder_max_length)[1]
+
     
     training_args = Seq2SeqTrainingArguments(
         output_dir=f"analysis_report_{analysis_name}/results",
@@ -232,7 +235,9 @@ def scs_analyze(analysis_name: str,
         logging_dir=f"analysis_report_{analysis_name}/logs",
         logging_steps=logging_stes,
         save_total_limit=save_total_lim,
-        report_to=None
+        report_to=None,
+        save_strategy=save_strategy,
+        load_best_model_at_end=load_best_model_at_end
     )
     
     data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
@@ -255,6 +260,8 @@ def scs_analyze(analysis_name: str,
     results_zero_shot_df.loc[0, :] = results_zero_shot_df.loc[0, :].apply(lambda x: round(x, 3))
     print(results_zero_shot_df)
     
+    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_zero_shot.csv', index=False)
+    
     # TRAINING
     trainer.train()
     
@@ -263,6 +270,8 @@ def scs_analyze(analysis_name: str,
     results_fine_tune_df = pd.DataFrame(data=results_fine_tune, index=[0])[eval_columns_list]
     results_fine_tune_df.loc[0, :] = results_fine_tune_df.loc[0, :].apply(lambda x: round(x, 3))
     print(results_fine_tune_df)
+    
+    results_fine_tune_df.to_csv(f'analysis_report_{analysis_name}/results_fine_tune.csv', index=False)
     
     summaries_after_tuning = generate_summary(test_samples, 
                                              model,
@@ -299,8 +308,6 @@ def scs_analyze(analysis_name: str,
             results_file.write('_'*10)
             results_file.write('\n')
     
-    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_zero_shot.csv', index=False)
-    results_fine_tune_df.to_csv(f'analysis_report_{analysis_name}/results_fine_tune.csv', index=False)
     
     # STORE PARAMS
     with open(f'analysis_report_{analysis_name}/config.json', "w") as params_file:
@@ -323,8 +330,10 @@ def scs_analyze(analysis_name: str,
                          'save_total_lim': save_total_lim,
                          'label_smooting': label_smooting,
                          'predict_generate': predict_generate,
-                         'eval_columns_list': eval_columns_list
+                         'eval_columns_list': eval_columns_list,
+                         'save_strategy' : save_strategy,
                          }
         json.dump(config_params, params_file)
                          
-        
+    
+    

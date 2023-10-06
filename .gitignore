@@ -1,3 +1,5 @@
+Quantlet/4-qode2desc/analysis_report_codetrans_domain_context_512_10_epochs_test_FINAL_SERVE/
+data/preprocessed/Quantlet/
 tt.txt
 Quantlet/5-domain-pre-training/results/
 data/QuantLet/*
@@ -54,3 +56,7 @@ Quantlet/Domain_PreTraining/logs/*
 Quantlet/Domain_PreTraining/results
 Quantlet/Domain_PreTraining/results/*
 file.pem
+Quantlet/5-domain-pre-training/analysis_report*
+Quantlet/4-qode2desc/analysis_report*
+Quantlet/7-corpus-token-ident/arxiv_data.csv
+Quantlet/7-corpus-token-ident/arxiv_data_210930-054931.csv
