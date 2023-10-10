@@ -154,7 +154,8 @@ def scs_analyze(analysis_name: str,
                          predict_generate: bool=True,
                          eval_columns_list: list=['eval_loss', 'eval_rouge1'],
                          save_strategy='no',
-                         load_best_model_at_end=True): 
+                         load_best_model_at_end=True,
+                         evaluate_only=False): 
                          
     # CREATE ANALYSIS FOLDER
     os.mkdir(f'analysis_report_{analysis_name}')
@@ -261,6 +262,16 @@ def scs_analyze(analysis_name: str,
     print(results_zero_shot_df)
     
     results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_zero_shot.csv', index=False)
+    
+    if evaluate_only:
+        with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
+        
+            for i, description in enumerate(test_samples["output_sequence"]):
+                results_file.write('_'*10)
+                results_file.write(f'Original: {description}')
+                results_file.write(f'Summaries: {summaries_before_tuning[i]}')
+        return 'Finished'
+        
     
     # TRAINING
     trainer.train()
