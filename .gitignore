@@ -61,3 +61,8 @@ Quantlet/4-qode2desc/analysis_report*
 Quantlet/7-corpus-token-ident/arxiv_data.csv
 Quantlet/7-corpus-token-ident/arxiv_data_210930-054931.csv
 Quantlet/5-domain-pre-training/arxiv_pretraining/
+Quantlet/4-qode2desc/bootstrap_3_domain/
+Quantlet/4-qode2desc/bootstrap_4_domain/
+Quantlet/4-qode2desc/no_bootstrap
+Quantlet/4-qode2desc/bootstrap_languages
+Quantlet/4-qode2desc/deprecated_files

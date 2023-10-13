@@ -346,5 +346,146 @@ def scs_analyze(analysis_name: str,
                          }
         json.dump(config_params, params_file)
                          
+
+def bootstrap_inference(analysis_name: str,
+                         model_name: str, 
+                         train_data_path: str, 
+                         val_data_path:   str,
+                         train_data_name: str,
+                         val_data_names_list: list,
+                         encoder_max_length: int, 
+                         decoder_max_length: int,
+                         random_state: int, 
+                         learning_rate: float=5e-5,
+                         epochs: int=4, 
+                         train_batch: int=4, 
+                         eval_batch: int=4,
+                         warmup_steps: int=500, 
+                         weight_decay: float=0.1,
+                         logging_stes: int=100,
+                         save_total_lim: int=3,
+                         label_smooting: float = 0.1,
+                         predict_generate: bool=True,
+                         eval_columns_list: list=['eval_loss', 'eval_rouge1'],
+                         save_strategy='no',
+                         load_best_model_at_end=True,
+                         evaluate_only=False): 
+                         
+    # CREATE ANALYSIS FOLDER
+    os.mkdir(f'analysis_report_{analysis_name}')
+    print(analysis_name)
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+    
+    if model_name=='CodeT5':
+        model_name="Salesforce/codet5-base-multi-sum"
+        
+    elif model_name=='CodeTrans':
+        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"
+                         
+    model = AutoModelWithLMHead.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
+    model.to(device)
+    print(device)
+    
+    train_dataset = load_dataset("json",
+                             data_files=train_data_name,
+                             field="data",
+                             data_dir=train_data_path)
+
+                                
+    train_data_txt = train_dataset['train']
+        
+    
+    
+    train_data = train_data_txt.map(
+        lambda batch: batch_tokenize_preprocess(
+            batch, 
+            tokenizer=tokenizer,
+            max_input_length=encoder_max_length,
+            max_output_length=decoder_max_length
+        ),
+        batch_size=8,
+        batched=True,
+        remove_columns=train_data_txt.column_names,
+    )
+    
+    for i, val_data_name in tqdm(enumerate(val_data_names_list)):
+    
+        test_dataset = load_dataset("json",
+                                    data_files=val_data_name,
+                                    field="data",
+                                    data_dir=val_data_path)
+                                    
+        validation_data_txt = test_dataset['train']
+        
+        validation_data = validation_data_txt.map(
+            lambda batch: batch_tokenize_preprocess(
+                batch, 
+                tokenizer=tokenizer,
+                max_input_length=encoder_max_length,
+                max_output_length=decoder_max_length
+            ),
+            batched=True,
+            remove_columns=validation_data_txt.column_names,
+        )
+    
+        
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=f"analysis_report_{analysis_name}/results",
+            num_train_epochs=epochs,
+            do_train=True,
+            do_eval=True,
+            per_device_train_batch_size=train_batch,
+            per_device_eval_batch_size=eval_batch,
+            learning_rate=learning_rate,
+            warmup_steps=warmup_steps,
+            weight_decay=weight_decay,
+            label_smoothing_factor=label_smooting,
+            predict_with_generate=predict_generate,
+            logging_dir=f"analysis_report_{analysis_name}/logs",
+            logging_steps=logging_stes,
+            save_total_limit=save_total_lim,
+            report_to=None,
+            save_strategy=save_strategy,
+            load_best_model_at_end=load_best_model_at_end
+        )
+        
+        data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
+        
+        compute_metrics = compute_metric_with_params(tokenizer)
+        
+        trainer = Seq2SeqTrainer(
+            model=model,
+            args=training_args,
+            data_collator=data_collator,
+            train_dataset=train_data,
+            eval_dataset=validation_data,
+            tokenizer=tokenizer,
+            compute_metrics=compute_metrics,
+        )
+        
+        # ZERO - SHOT
+        if i == 0:
+            results_zero_shot = trainer.evaluate()
+            results_zero_shot_df = pd.DataFrame(data=results_zero_shot, index=[0])[eval_columns_list]
+            results_zero_shot_df.loc[0, :] = results_zero_shot_df.loc[0, :].apply(lambda x: round(x, 3))
+            print(results_zero_shot_df)
+        else: 
+            results = trainer.evaluate()
+            results_df = pd.DataFrame(data=results, index=[0])[eval_columns_list]
+            results_df.iloc[0, :] = results_df.iloc[0, :].apply(lambda x: round(x, 3))
+            
+            results_zero_shot_df = pd.concat([results_zero_shot_df, results_df], axis=0)
+            
+    results_zero_shot_df.loc['mean', :] = results_zero_shot_df.mean(axis=0)
+    results_zero_shot_df.loc['mean', :] = results_zero_shot_df.loc['mean', :].apply(lambda x: round(x, 3))
+    
+    results_zero_shot_df.loc['std', :]  = results_zero_shot_df.std(axis=0)
+    results_zero_shot_df.loc['std', :] = results_zero_shot_df.loc['std', :].apply(lambda x: round(x, 3))
+    
+    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_bootstrap.csv', index=True)
+    
     
     
