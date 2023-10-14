@@ -144,31 +144,11 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     
-def parse_meta_str(row):
-    row = row.replace('NW: ', '')
-    other = {}
-    field_list = row.split("\n")
-    for field in field_list:
-        if ":" not in field:
-            continue
-        field_name, field_value = field.split(":")[0], field.split(":")[1]
-        field_name = field_name.lower()
-        field_value = field_value.strip()
-
-        if "name" in field_name:
-            name = field_value
-        elif "desc" in field_name:
-            desc = field_value
-        elif "keyw" in field_name:
-            key = field_value
-        elif "auth" in field_name:
-            aut = field_value
-        else:
-            other[field_name] = field_value
-    return [name, desc, key, aut, other]
     
-def parse_meta_dict(row):
-
+def parse_meta(row):
+    row = row['metainfo_file']
+    if row=='empty':
+        return ['','','','']
     dict_keys = list(row.keys())
     dict_key_n = [k.lower() for k in dict_keys]
     name_idx = np.where(['name' in k for k in dict_key_n])[0]
@@ -202,19 +182,7 @@ def parse_meta_dict(row):
         
     other = {k: row[k] for k in dict_keys if k not in dict_keys_used}
     return [name, desc, key, aut, other]
-
-def parse_meta(row): 
     
-    row = row['metainfo_file']
-    if row=='empty':
-        metainfo_list = ['','','','', '']
-        
-    if isinstance(row, dict):
-        metainfo_list = parse_meta_dict(row)
-    elif isinstance(row, str):
-        metainfo_list = parse_meta_str(row)
-    return metainfo_list
-
 def explode_code_and_lang(df):
     new_df = pd.DataFrame()
 
@@ -318,83 +286,6 @@ def cut_300(row):
     return ' '.join(tokenized[:2500])
     
 def greedy_clean(code_snippet):
-    code_snippet = re.sub('\W+', ' ', code_snippet).strip()
-    cleaned_up = [word for word in code_snippet.split() if len(word)>2]
-    return ' '.join(cleaned_up)
-
-def df_metainfo_parse(df, prepare_script=False, remove_other=False):
-    df = df[df.metainfo_file!='empty']
-    print(df.shape)
-    
-    COLUMNS = ['Quantlet', 'Description', 'Keywords', 'Authors', 'Other']
-    
-
-    if 'Keywords' not in df.columns:
-        
-        meta_info = pd.DataFrame(columns=COLUMNS)
-        meta_info[COLUMNS] = df.apply(
-          lambda x: parse_meta(x),
-              axis='columns',
-              result_type='expand'
-          )
-
-        for col in meta_info.columns:
-            meta_info[col] = meta_info[col].astype(str)
-
-        df = pd.concat([df, meta_info], axis=1)
-
-        del df['metainfo_file']
-        if remove_other:
-            del df['Other']
-        del df['script_name_no_ext']
-        
-    if prepare_script:
-        df['code_script'] = df['code_script'].apply(lambda x: [line for line in x if len(line)>0])
-        df['code_script'] = df['code_script'].apply(lambda x: ' '.join(x))
-        
-        df['scr_n'] = df['code_script'].apply(len)
-        df['description_len'] = df['Description'].apply(len)
-        df['description_n_words'] = df['Description'].apply(lambda x: len(x.split()))
-        df = df.reset_index(drop=True)
-        
-        # ADD REPO INFORMATION
-        df['repo'] = df['folder_name'].str.split('QuantLet/', expand=True)[1].str.split('/', expand=True)[0]
-    print(df.shape)  
-    return df
-
-def clean_up(df): 
-    # ANALYZE LENGTH OF THE CODE SNIPPET
-    df['code_len'] = df['code_script'].progress_apply(len)
-
-    # REMOVE CODE LINE DUPLICATES
-    df['code_script'] = df['code_script'].progress_apply(remove_dup_lines)
-    df['new_len'] = df['code_script'].progress_apply(len)
-
-    # REMOVE TOO SIMILAR LINES
-    # we want to get as much information
-    df['code_script'] = df['code_script'].progress_apply(remove_too_similar_line)
-    df['new_len'] = df['code_script'].progress_apply(len)
-
-    # REMOVE TOO SIMILAR TOKENS
-    df['code_script'] = df['code_script'].progress_apply(remove_too_similar_token)
-    df['new_len2'] = df['code_script'].progress_apply(len)
-
-    df = df.reset_index(drop=True)
-    df = df.drop(list(df[df['new_len2']==0].index)).reset_index(drop=True)
-    return df
-
-def combine_url(row):
-    path_ending = row["folder_name"].split(row.repo + "/")
-    if len(path_ending) > 1:
-        path_ending = path_ending[1]
-    else:
-        path_ending = path_ending[0]
-    url = (
-        "https://github.com/QuantLet/"
-        + row["repo"]
-        + "/blob/master/"
-        + path_ending
-        + "/"
-        + row["script_name"]
-    )
-    return url
+  code_snippet = re.sub('\W+', ' ', code_snippet).strip()
+  cleaned_up = [word for word in code_snippet.split() if len(word)>2]
+  return ' '.join(cleaned_up)
