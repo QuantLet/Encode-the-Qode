@@ -155,7 +155,8 @@ def scs_analyze(analysis_name: str,
                          eval_columns_list: list=['eval_loss', 'eval_rouge1'],
                          save_strategy='no',
                          load_best_model_at_end=True,
-                         evaluate_only=False): 
+                         evaluate_only=False,
+                         report_to=None): 
                          
     # CREATE ANALYSIS FOLDER
     os.mkdir(f'analysis_report_{analysis_name}')

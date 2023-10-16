@@ -355,6 +355,7 @@ def df_metainfo_parse(df, prepare_script=False, remove_other=False):
         df['scr_n'] = df['code_script'].apply(len)
         df['description_len'] = df['Description'].apply(len)
         df['description_n_words'] = df['Description'].apply(lambda x: len(x.split()))
+        df = df.loc[df.Description != "",:]
         df = df.reset_index(drop=True)
         
         # ADD REPO INFORMATION
