@@ -399,3 +399,140 @@ def combine_url(row):
         + row["script_name"]
     )
     return url
+
+def save_datasets(train, val, test, DATE, RS):
+    full_train = (
+        pd.concat([train, val], axis=0)
+        .sample(frac=1, random_state=RS)
+        .reset_index(drop=True)
+        )
+    full_train.to_csv(
+    f"../../data/preprocessed/Quantlet/{DATE}/full_train_df_{DATE}_sample0.csv",
+    index=False,
+    )
+    train.to_csv(
+        f"../../data/preprocessed/Quantlet/{DATE}/train_df_{DATE}_sample0.csv", index=False
+    )
+    val.to_csv(
+        f"../../data/preprocessed/Quantlet/{DATE}/val_df_{DATE}_sample0.csv", index=False
+    )
+    test.to_csv(
+        f"../../data/preprocessed/Quantlet/{DATE}/test_df_{DATE}_sample0.csv", index=False
+    )
+
+
+    print(train.shape)
+    print(train["type_script"].value_counts(normalize=True))
+    print(val.shape)
+    print(val["type_script"].value_counts(normalize=True))
+    print(test.shape)
+    print(test["type_script"].value_counts(normalize=True))
+
+    print(train.shape)
+    print(train["type_script"].value_counts(normalize=False))
+    print(val.shape)
+    print(val["type_script"].value_counts(normalize=False))
+    print(test.shape)
+    print(test["type_script"].value_counts(normalize=False))
+    
+    
+    
+    for MODE in ["no_context", "author", "repo"]:
+        
+        if not os.path.isdir(f"../../data/preprocessed/Quantlet/{DATE}/{MODE}"):
+            os.mkdir(f"../../data/preprocessed/Quantlet/{DATE}/{MODE}")
+            
+        # FIX NA
+        test.loc[test["Quantlet"].isna(), "Quantlet"] = "XFGexp_rtn_SRM_2d_DOENST RUN"
+        train["Authors"] = train["Authors"].fillna("Unknown")
+        val["Authors"] = val["Authors"].fillna("Unknown")
+        test["Authors"] = test["Authors"].fillna("Unknown")
+
+        if MODE == "repo":
+            train.loc[:, "code_script"] = (
+                "# repo: " + train["repo"] + "\n " + train["code_script"]
+            )
+            val.loc[:, "code_script"] = (
+                "# repo: " + val["repo"] + "\n " + val["code_script"]
+            )
+            test.loc[:, "code_script"] = (
+                "# repo: " + test["repo"] + "\n " + test["code_script"]
+            )
+
+        elif MODE == "author":
+            train.loc[:, "code_script"] = (
+                "# author: " + train["Authors"] + "\n " + train["code_script"]
+            )
+            val.loc[:, "code_script"] = (
+                "# author: " + val["Authors"] + "\n " + val["code_script"]
+            )
+            test.loc[:, "code_script"] = (
+                "# author: " + test["Authors"] + "\n " + test["code_script"]
+            )
+
+        train_dataset_json = {
+            "version": "3.0",
+            "data": [
+                {
+                    "input_sequence": train["code_script"].iloc[i],
+                    "output_sequence": train["Description"].iloc[i],
+                }
+                for i in range(train.shape[0])
+            ],
+        }
+        val_dataset_json = {
+            "version": "3.0",
+            "data": [
+                {
+                    "input_sequence": val["code_script"].iloc[i],
+                    "output_sequence": val["Description"].iloc[i],
+                }
+                for i in range(val.shape[0])
+            ],
+        }
+
+        full_train_dataset_json = {
+            "version": "3.0",
+            "data": [
+                {
+                    "input_sequence": full_train["code_script"].iloc[i],
+                    "output_sequence": full_train["Description"].iloc[i],
+                }
+                for i in range(full_train.shape[0])
+            ],
+        }
+
+        test_dataset_json = {
+            "version": "3.0",
+            "data": [
+                {
+                    "input_sequence": test["code_script"].iloc[i],
+                    "output_sequence": test["Description"].iloc[i],
+                }
+                for i in range(test.shape[0])
+            ],
+        }
+
+        with open(
+            f"../../data/preprocessed/Quantlet/{DATE}/{MODE}/full_train_dataset_{DATE}_sample0.json",
+            "w",
+        ) as f:
+            json.dump(full_train_dataset_json, f)
+
+        with open(
+            f"../../data/preprocessed/Quantlet/{DATE}/{MODE}/train_dataset_{DATE}_sample0.json",
+            "w",
+        ) as f:
+            json.dump(train_dataset_json, f)
+
+        with open(
+            f"../../data/preprocessed/Quantlet/{DATE}/{MODE}/val_dataset_{DATE}_sample0.json",
+            "w",
+        ) as f:
+            json.dump(val_dataset_json, f)
+
+        with open(
+            f"../../data/preprocessed/Quantlet/{DATE}/{MODE}/test_dataset_{DATE}_sample0.json",
+            "w",
+        ) as f:
+            json.dump(test_dataset_json, f)
