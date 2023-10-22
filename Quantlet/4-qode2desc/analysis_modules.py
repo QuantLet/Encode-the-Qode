@@ -15,7 +15,7 @@ import seaborn as sns
 import torch
 from torch.utils.data import  DataLoader
 from transformers import AutoTokenizer, AutoModelWithLMHead, SummarizationPipeline
-from transformers import AdamW
+from transformers import AdamW, TrainerCallback
 from datasets import load_dataset
 
 from transformers import (
@@ -23,7 +23,9 @@ from transformers import (
     AutoTokenizer,
     Seq2SeqTrainingArguments,
     Seq2SeqTrainer,
-    DataCollatorForSeq2Seq
+    DataCollatorForSeq2Seq,
+    ProgressCallback
+    
 )
 
 import nltk
@@ -119,7 +121,7 @@ def compute_metric_with_params(tokenizer, metrics_list=['rouge', 'bleu']):
         return results_dict
     return compute_metrics
     
-def generate_summary(test_samples, model, tokenizer, encoder_max_length):
+def generate_summary(test_samples, model, tokenizer, encoder_max_length, decoder_max_length):
     inputs = tokenizer(
         test_samples["input_sequence"],
         padding="max_length",
@@ -129,9 +131,21 @@ def generate_summary(test_samples, model, tokenizer, encoder_max_length):
     )
     input_ids = inputs.input_ids.to(model.device)
     attention_mask = inputs.attention_mask.to(model.device)
-    outputs = model.generate(input_ids, attention_mask=attention_mask)
+    outputs = model.generate(input_ids, attention_mask=attention_mask, max_new_tokens=decoder_max_length)
     output_str = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return outputs, output_str
+
+class CustomCallback(TrainerCallback):
+    
+    def __init__(self, trainer) -> None:
+        super().__init__()
+        self._trainer = trainer
+    
+    def on_epoch_end(self, args, state, control, **kwargs):
+        if control.should_evaluate:
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
+            return control_copy
 
 def scs_analyze(analysis_name: str,
                          model_name: str, 
@@ -152,11 +166,21 @@ def scs_analyze(analysis_name: str,
                          save_total_lim: int=3,
                          label_smooting: float = 0.1,
                          predict_generate: bool=True,
-                         eval_columns_list: list=['eval_loss', 'eval_rouge1'],
+                         eval_columns_list: list=[
+                                "eval_loss",
+                                "eval_rouge1",
+                                "eval_rouge2",
+                                "eval_rougeL",
+                                "eval_rougeLsum",
+                                "eval_bleu",
+                                "eval_gen_len",
+                            ],
                          save_strategy='no',
+                         evaluation_strategy='no',
                          load_best_model_at_end=True,
                          evaluate_only=False,
-                         report_to=None): 
+                         report_to=None,
+               **kwargs): 
                          
     # CREATE ANALYSIS FOLDER
     os.mkdir(f'analysis_report_{analysis_name}')
@@ -171,7 +195,7 @@ def scs_analyze(analysis_name: str,
     elif model_name=='CodeTrans':
         model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"
                          
-    model = AutoModelWithLMHead.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
     model.to(device)
     print(device)
@@ -219,7 +243,8 @@ def scs_analyze(analysis_name: str,
     summaries_before_tuning = generate_summary(test_samples, 
                                                 model, 
                                                 tokenizer, 
-                                                encoder_max_length)[1]
+                                                encoder_max_length,
+                                              decoder_max_length)[1]
 
     
     training_args = Seq2SeqTrainingArguments(
@@ -237,8 +262,9 @@ def scs_analyze(analysis_name: str,
         logging_dir=f"analysis_report_{analysis_name}/logs",
         logging_steps=logging_stes,
         save_total_limit=save_total_lim,
-        report_to=None,
+        report_to=report_to,
         save_strategy=save_strategy,
+        evaluation_strategy=evaluation_strategy,
         load_best_model_at_end=load_best_model_at_end
     )
     
@@ -288,15 +314,20 @@ def scs_analyze(analysis_name: str,
     summaries_after_tuning = generate_summary(test_samples, 
                                              model,
                                              tokenizer,
-                                             encoder_max_length)[1]
+                                             encoder_max_length,
+                                             decoder_max_length)[1]
     
     for i, description in enumerate(test_samples["output_sequence"]):
       print('_'*10)
       print(f'Original: {description}')
-      print(f'Summary before Tuning: {summaries_before_tuning[i]}')
-      print(f'Summary after Tuning: {summaries_after_tuning[i]}')
-      print('_'*10)
+        
       print('\n')
+      print(f'Summary before Tuning: {summaries_before_tuning[i]}')
+      print('\n')
+      print(f'Summary after Tuning: {summaries_after_tuning[i]}')
+      print('\n')
+      print('_'*10)
+      print('\n'*2)
       
     # CREATE REPORT
     with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
@@ -346,6 +377,8 @@ def scs_analyze(analysis_name: str,
                          'save_strategy' : save_strategy,
                          }
         json.dump(config_params, params_file)
+        
+    return trainer
                          
 
 def bootstrap_inference(analysis_name: str,
@@ -367,10 +400,19 @@ def bootstrap_inference(analysis_name: str,
                          save_total_lim: int=3,
                          label_smooting: float = 0.1,
                          predict_generate: bool=True,
-                         eval_columns_list: list=['eval_loss', 'eval_rouge1'],
+                         eval_columns_list: list=[
+                                "eval_loss",
+                                "eval_rouge1",
+                                "eval_rouge2",
+                                "eval_rougeL",
+                                "eval_rougeLsum",
+                                "eval_bleu",
+                                "eval_gen_len",
+                            ],
                          save_strategy='no',
                          load_best_model_at_end=True,
-                         evaluate_only=False): 
+                         evaluate_only=False,
+                       **kwargs): 
                          
     # CREATE ANALYSIS FOLDER
     os.mkdir(f'analysis_report_{analysis_name}')
@@ -487,6 +529,5 @@ def bootstrap_inference(analysis_name: str,
     results_zero_shot_df.loc['std', :] = results_zero_shot_df.loc['std', :].apply(lambda x: round(x, 3))
     
     results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_bootstrap.csv', index=True)
-    
     
     
