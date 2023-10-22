@@ -264,6 +264,7 @@ def scs_analyze(analysis_name: str,
         save_total_limit=save_total_lim,
         report_to=report_to,
         save_strategy=save_strategy,
+        logging_strategy='epoch',
         evaluation_strategy=evaluation_strategy,
         load_best_model_at_end=load_best_model_at_end
     )
