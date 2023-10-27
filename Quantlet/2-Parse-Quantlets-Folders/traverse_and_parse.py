@@ -1,7 +1,6 @@
 import pandas as pd
 import yaml
 import os
-import pickle
 from tqdm import tqdm
 import sys
 sys.path.append('../3-data-preprocessing')
@@ -30,12 +29,14 @@ def traverse_folder(path, file_types):
                 try:
                     with open(f'{root}/{m_file[0]}', 'r') as meta:
                         metainfofile = yaml.safe_load(meta)
-                except:
+                except Exception as e:
+                    print(f'Could not load the metafile as yaml, because of {e}')
                     try:
                         with open(f'{root}/{m_file[0]}', 'r') as meta:
                             metainfofile =  'NW: ' + meta.read()
-                    except:
+                    except Exception as e:
                         print(f'{root}/{m_file[0]}')
+                        print(f'Could not load the metafile as a text file, because of {e}')
 
                 code_files = [file for file in files if file.split('.')[-1] in file_types] 
 
@@ -50,7 +51,9 @@ def traverse_folder(path, file_types):
 
                         try:
                             sc_file = preprocessing_utils.load_code(f'{root}/{c_file}', language=language)
-                        except:
+                        except Exception as e:
+                            print(c_file)
+                            print(e)
                             sc_file = 'empty'
 
                         q['folder_name'] = root
