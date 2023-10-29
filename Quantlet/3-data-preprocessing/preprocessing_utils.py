@@ -1,14 +1,14 @@
+from Levenshtein import distance
 import os
 import json
-import pickle
+import re
+import torch
+import random
 import pandas as pd
-from IPython.display import display
-from torch.utils.data import Dataset
 import numpy as np
-import tqdm
 from tqdm import tqdm
 tqdm.pandas()
-from Levenshtein import distance
+
 
 def check_if_import(code_snippet, language='py'):
     
@@ -26,50 +26,6 @@ def check_if_import(code_snippet, language='py'):
             is_import = True
         
     return is_import
-        
-    
-def check_if_part_of_block(code_snippet, language='py'):
-    
-    """Check if code_snippet is part of a block of code"""
-    is_block = False
-    if language == 'py':
-        if code_snippet.startswith(
-            (
-            ' ', '\t', ')', '}', ']', 'else', 'elif', 'except', 'finally'
-            )
-            ):
-            is_block = True
-    elif language == 'r':
-        pass
-    elif language == 'm':
-        pass
-    
-def tokenize_block(code_list):
-    
-    """Tokenize a block of code"""
-    
-    new_list = []
-    import_flag = False
-
-    for code_snippet in code_list: 
-
-        if check_if_part_of_block(code_snippet):
-            
-            new_list[-1] = new_list[-1] + code_snippet
-            continue
-        elif check_if_import(code_snippet):
-            if import_flag:
-                new_list[-1] = new_list[-1] + code_snippet
-            else:
-                new_list.append(code_snippet)
-                import_flag = True
-            continue
-        else:
-            new_list.append(code_snippet)
-            import_flag = False
-
-    return new_list
-
 
 def load_script(code_script_path):
 
@@ -80,8 +36,8 @@ def load_script(code_script_path):
     for line in code: 
         try: 
             new_code.append(line.decode())
-        except:
-            pass
+        except Exception as e:
+            print(f"Could not laod the script because of {e} ")
     code = new_code    
     #code = [line.decode() for line in code]
     code = [item.replace('\n', '') for item in code if item.endswith('\n')]
@@ -221,7 +177,7 @@ def explode_code_and_lang(df):
     print(f'Shape before exploding scripts: {df.shape}')
 
     for index, row in tqdm(df.iterrows()):
-        if row['multiple_scripts']==True:
+        if row['multiple_scripts']:
           for i, script in enumerate(row['code_script']):
               row['main_script'] = script
               row['main_type_script'] = row['type_script'][i]
@@ -322,8 +278,13 @@ def greedy_clean(code_snippet):
     cleaned_up = [word for word in code_snippet.split() if len(word)>2]
     return ' '.join(cleaned_up)
 
-def df_metainfo_parse(df, prepare_script=False, remove_other=False):
-    df = df[df.metainfo_file!='empty']
+def df_metainfo_parse(df,
+    prepare_script=False,
+    remove_other=False,
+    remove_empty=True ):
+    
+    if remove_empty:
+        df = df[df.metainfo_file!='empty']
     print(df.shape)
     
     COLUMNS = ['Quantlet', 'Description', 'Keywords', 'Authors', 'Other']
@@ -369,19 +330,17 @@ def clean_up(df):
 
     # REMOVE CODE LINE DUPLICATES
     df['code_script'] = df['code_script'].progress_apply(remove_dup_lines)
-    df['new_len'] = df['code_script'].progress_apply(len)
 
     # REMOVE TOO SIMILAR LINES
     # we want to get as much information
     df['code_script'] = df['code_script'].progress_apply(remove_too_similar_line)
-    df['new_len'] = df['code_script'].progress_apply(len)
 
     # REMOVE TOO SIMILAR TOKENS
     df['code_script'] = df['code_script'].progress_apply(remove_too_similar_token)
-    df['new_len2'] = df['code_script'].progress_apply(len)
+    df['code_len'] = df['code_script'].progress_apply(len)
 
     df = df.reset_index(drop=True)
-    df = df.drop(list(df[df['new_len2']==0].index)).reset_index(drop=True)
+    df = df.drop(list(df[df['code_len']==0].index)).reset_index(drop=True)
     return df
 
 def combine_url(row):
