@@ -178,12 +178,12 @@ def explode_code_and_lang(df):
 
     for index, row in tqdm(df.iterrows()):
         if row['multiple_scripts']:
-          for i, script in enumerate(row['code_script']):
-              row['main_script'] = script
-              row['main_type_script'] = row['type_script'][i]
-              new_df = new_df.append(row)
+            for i, script in enumerate(row['code_script']):
+                row['main_script'] = script
+                row['main_type_script'] = row['type_script'][i]
+                new_df = new_df.append(row)
         else:
-          new_df = new_df.append(row)
+            new_df = new_df.append(row)
 
     new_df['main_script'] = new_df['main_script'].fillna(new_df['code_script'])
     new_df['main_type_script'] = new_df['main_type_script'].fillna(new_df['type_script'])
@@ -363,25 +363,21 @@ def combine_url(row):
     )
     return url
 
-def save_datasets(train, val, test, DATE, RS):
-    full_train = (
-        pd.concat([train, val], axis=0)
-        .sample(frac=1, random_state=RS)
-        .reset_index(drop=True)
+def save_datasets(full_train, train, val, test, DATE, RS, variable, save_df=False):
+    if save_df:
+        full_train.to_csv(
+        f"../../data/preprocessed/Quantlet/{DATE}/full_train_df_{DATE}_sample0.csv",
+        index=False,
         )
-    full_train.to_csv(
-    f"../../data/preprocessed/Quantlet/{DATE}/full_train_df_{DATE}_sample0.csv",
-    index=False,
-    )
-    train.to_csv(
-        f"../../data/preprocessed/Quantlet/{DATE}/train_df_{DATE}_sample0.csv", index=False
-    )
-    val.to_csv(
-        f"../../data/preprocessed/Quantlet/{DATE}/val_df_{DATE}_sample0.csv", index=False
-    )
-    test.to_csv(
-        f"../../data/preprocessed/Quantlet/{DATE}/test_df_{DATE}_sample0.csv", index=False
-    )
+        train.to_csv(
+            f"../../data/preprocessed/Quantlet/{DATE}/train_df_{DATE}_sample0.csv", index=False
+        )
+        val.to_csv(
+            f"../../data/preprocessed/Quantlet/{DATE}/val_df_{DATE}_sample0.csv", index=False
+        )
+        test.to_csv(
+            f"../../data/preprocessed/Quantlet/{DATE}/test_df_{DATE}_sample0.csv", index=False
+        )
 
 
     print(train.shape)
@@ -412,32 +408,32 @@ def save_datasets(train, val, test, DATE, RS):
         test["Authors"] = test["Authors"].fillna("Unknown")
 
         if MODE == "repo":
-            train.loc[:, "code_script"] = (
-                "# repo: " + train["repo"] + "\n " + train["code_script"]
+            train.loc[:, variable] = (
+                "# repo: " + train["repo"] + "\n " + train[variable]
             )
-            val.loc[:, "code_script"] = (
-                "# repo: " + val["repo"] + "\n " + val["code_script"]
+            val.loc[:, variable] = (
+                "# repo: " + val["repo"] + "\n " + val[variable]
             )
-            test.loc[:, "code_script"] = (
-                "# repo: " + test["repo"] + "\n " + test["code_script"]
+            test.loc[:, variable] = (
+                "# repo: " + test["repo"] + "\n " + test[variable]
             )
 
         elif MODE == "author":
-            train.loc[:, "code_script"] = (
-                "# author: " + train["Authors"] + "\n " + train["code_script"]
+            train.loc[:, variable] = (
+                "# author: " + train["Authors"] + "\n " + train[variable]
             )
-            val.loc[:, "code_script"] = (
-                "# author: " + val["Authors"] + "\n " + val["code_script"]
+            val.loc[:, variable] = (
+                "# author: " + val["Authors"] + "\n " + val[variable]
             )
-            test.loc[:, "code_script"] = (
-                "# author: " + test["Authors"] + "\n " + test["code_script"]
+            test.loc[:, variable] = (
+                "# author: " + test["Authors"] + "\n " + test[variable]
             )
 
         train_dataset_json = {
             "version": "3.0",
             "data": [
                 {
-                    "input_sequence": train["code_script"].iloc[i],
+                    "input_sequence": train[variable].iloc[i],
                     "output_sequence": train["Description"].iloc[i],
                 }
                 for i in range(train.shape[0])
@@ -447,7 +443,7 @@ def save_datasets(train, val, test, DATE, RS):
             "version": "3.0",
             "data": [
                 {
-                    "input_sequence": val["code_script"].iloc[i],
+                    "input_sequence": val[variable].iloc[i],
                     "output_sequence": val["Description"].iloc[i],
                 }
                 for i in range(val.shape[0])
@@ -458,7 +454,7 @@ def save_datasets(train, val, test, DATE, RS):
             "version": "3.0",
             "data": [
                 {
-                    "input_sequence": full_train["code_script"].iloc[i],
+                    "input_sequence": full_train[variable].iloc[i],
                     "output_sequence": full_train["Description"].iloc[i],
                 }
                 for i in range(full_train.shape[0])
@@ -469,7 +465,7 @@ def save_datasets(train, val, test, DATE, RS):
             "version": "3.0",
             "data": [
                 {
-                    "input_sequence": test["code_script"].iloc[i],
+                    "input_sequence": test[variable].iloc[i],
                     "output_sequence": test["Description"].iloc[i],
                 }
                 for i in range(test.shape[0])
@@ -502,18 +498,18 @@ def save_datasets(train, val, test, DATE, RS):
 
 # Chunk code snippets
 def chunk_code(code_snippet: str, chunk_size:int) -> list:
-    words = code_snippet.split(' |\n')
+    words = code_snippet.split(' ')
     chunks = []
-    current_chunk = ''
+    current_chunk = []
     for word in words:
-        if len(current_chunk) + len(word) <= chunk_size:
-            current_chunk += word + ' '
+        if len(current_chunk) + 1 <= chunk_size:
+            current_chunk.append(word)
         else:
             chunks.append(current_chunk)
-            current_chunk = word + ' '
+            current_chunk = [word]
     if current_chunk:
         chunks.append(current_chunk)
-    return [*enumerate(chunks)]
+    return list(range(len(chunks))), [' '.join(chunk) for chunk in chunks]
 
 def camel_case_split(word):
     return re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', word)).split()
@@ -522,9 +518,14 @@ def snake_case_split(text):
     return text.replace('_', ' ')
 
 def extend_tokens(code_snippet): 
+    code_snippet = code_snippet.replace('\n', ' \n ')
     code_snippet = snake_case_split(code_snippet)
     cleaned_cs = []
-    for word in code_snippet.split():
-        cleaned_cs.extend(camel_case_split(word))
-    code_snippet = ' '.join(cleaned_cs)    
+    for word in code_snippet.split(' '):
+        if word == '\n': 
+            cleaned_cs.append(word)
+        else:
+            cleaned_cs.extend(camel_case_split(word))
+    code_snippet = ' '.join(cleaned_cs)   
+    code_snippet = code_snippet.replace(' \n ', '\n') 
     return code_snippet
