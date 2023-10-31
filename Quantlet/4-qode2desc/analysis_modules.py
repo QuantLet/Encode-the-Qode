@@ -1,46 +1,45 @@
-import os
-import pickle
 import json
-import re
+import os
 import sys
 
-from tqdm import tqdm
 import pandas as pd
+from tqdm import tqdm
+
 tqdm.pandas()
-import numpy as np
-
 import matplotlib.pyplot as plt
+import nltk
+import numpy as np
 import seaborn as sns
-
 import torch
-from torch.utils.data import  DataLoader
-from transformers import AutoTokenizer, AutoModelWithLMHead, SummarizationPipeline
-from transformers import AdamW, TrainerCallback
 from datasets import load_dataset
-
+from torch.utils.data import DataLoader
 from transformers import (
+    AdamW,
     AutoModelForSeq2SeqLM,
+    AutoModelWithLMHead,
     AutoTokenizer,
-    Seq2SeqTrainingArguments,
-    Seq2SeqTrainer,
     DataCollatorForSeq2Seq,
-    ProgressCallback
-    
+    ProgressCallback,
+    Seq2SeqTrainer,
+    Seq2SeqTrainingArguments,
+    SummarizationPipeline,
+    TrainerCallback,
 )
 
-import nltk
 nltk.download('punkt')
+import sys
+
 import evaluate
 
-import sys
 sys.path.append('../src')
 
 import preprocessing_utils
 
+
 def batch_tokenize_preprocess(batch,
-                              tokenizer,
-                              max_input_length,
-                              max_output_length):
+                                tokenizer,
+                                max_input_length,
+                                max_output_length):
 
     source = batch["input_sequence"]
     target = batch["output_sequence"]
@@ -135,38 +134,26 @@ def generate_summary(test_samples, model, tokenizer, encoder_max_length, decoder
     output_str = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return outputs, output_str
 
-class CustomCallback(TrainerCallback):
-    
-    def __init__(self, trainer) -> None:
-        super().__init__()
-        self._trainer = trainer
-    
-    def on_epoch_end(self, args, state, control, **kwargs):
-        if control.should_evaluate:
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
-            return control_copy
-
 def scs_analyze(analysis_name: str,
-                         model_name: str, 
-                         train_data_path: str, 
-                         val_data_path:   str,
-                         train_data_name: str,
-                         val_data_name: str,
-                         encoder_max_length: int, 
-                         decoder_max_length: int,
-                         random_state: int, 
-                         learning_rate: float=5e-5,
-                         epochs: int=4, 
-                         train_batch: int=4, 
-                         eval_batch: int=4,
-                         warmup_steps: int=500, 
-                         weight_decay: float=0.1,
-                         logging_stes: int=100,
-                         save_total_lim: int=3,
-                         label_smooting: float = 0.1,
-                         predict_generate: bool=True,
-                         eval_columns_list: list=[
+                        model_name: str, 
+                        train_data_path: str, 
+                        val_data_path:   str,
+                        train_data_name: str,
+                        val_data_name: str,
+                        encoder_max_length: int, 
+                        decoder_max_length: int,
+                        random_state: int, 
+                        learning_rate: float=5e-5,
+                        epochs: int=4, 
+                        train_batch: int=4, 
+                        eval_batch: int=4,
+                        warmup_steps: int=500, 
+                        weight_decay: float=0.1,
+                        logging_stes: int=100,
+                        save_total_lim: int=3,
+                        label_smooting: float = 0.1,
+                        predict_generate: bool=True,
+                        eval_columns_list: list=[
                                 "eval_loss",
                                 "eval_rouge1",
                                 "eval_rouge2",
@@ -175,15 +162,16 @@ def scs_analyze(analysis_name: str,
                                 "eval_bleu",
                                 "eval_gen_len",
                             ],
-                         save_strategy='no',
-                         evaluation_strategy='no',
-                         load_best_model_at_end=True,
-                         evaluate_only=False,
-                         report_to=None,
-               **kwargs): 
-                         
+                        save_strategy='no',
+                        evaluation_strategy='no',
+                        load_best_model_at_end=True,
+                        evaluate_only=False,
+                        report_to=None,
+                        freeze=False,
+            **kwargs): 
+                        
     # CREATE ANALYSIS FOLDER
-    os.mkdir(f'analysis_report_{analysis_name}')
+    ANALYSIS_FOLDER=f'reports/analysis_report_{analysis_name}'
     print(analysis_name)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -193,17 +181,25 @@ def scs_analyze(analysis_name: str,
         model_name="Salesforce/codet5-base-multi-sum"
         
     elif model_name=='CodeTrans':
-        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"
-                         
+        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"                     
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
+    if freeze:
+        for parameter in model.parameters():
+            parameter.requires_grad = False
+        for i, m in enumerate(model.decoder.block):        
+            #Only un-freeze the last n transformer blocks in the decoder
+            if i+1 > 12 - 4:
+                for parameter in m.parameters():
+                    parameter.requires_grad = True
+
     model.to(device)
     print(device)
     
     train_dataset = load_dataset("json",
-                             data_files=train_data_name,
-                             field="data",
-                             data_dir=train_data_path)
+                            data_files=train_data_name,
+                            field="data",
+                            data_dir=train_data_path)
 
     test_dataset = load_dataset("json",
                                 data_files=val_data_name,
@@ -244,11 +240,11 @@ def scs_analyze(analysis_name: str,
                                                 model, 
                                                 tokenizer, 
                                                 encoder_max_length,
-                                              decoder_max_length)[1]
+                                                decoder_max_length)[1]
 
     
     training_args = Seq2SeqTrainingArguments(
-        output_dir=f"analysis_report_{analysis_name}/results",
+        output_dir=f"{ANALYSIS_FOLDER}/results",
         num_train_epochs=epochs,
         do_train=True,
         do_eval=True,
@@ -259,7 +255,7 @@ def scs_analyze(analysis_name: str,
         weight_decay=weight_decay,
         label_smoothing_factor=label_smooting,
         predict_with_generate=predict_generate,
-        logging_dir=f"analysis_report_{analysis_name}/logs",
+        logging_dir=f"{ANALYSIS_FOLDER}/logs",
         logging_steps=logging_stes,
         save_total_limit=save_total_lim,
         report_to=report_to,
@@ -289,10 +285,10 @@ def scs_analyze(analysis_name: str,
     results_zero_shot_df.loc[0, :] = results_zero_shot_df.loc[0, :].apply(lambda x: round(x, 3))
     print(results_zero_shot_df)
     
-    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_zero_shot.csv', index=False)
+    results_zero_shot_df.to_csv(f'{ANALYSIS_FOLDER}/results_zero_shot.csv', index=False)
     
     if evaluate_only:
-        with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
+        with open(f'{ANALYSIS_FOLDER}/results.txt', "w") as results_file:
         
             for i, description in enumerate(test_samples["output_sequence"]):
                 results_file.write('_'*10)
@@ -310,39 +306,28 @@ def scs_analyze(analysis_name: str,
     results_fine_tune_df.loc[0, :] = results_fine_tune_df.loc[0, :].apply(lambda x: round(x, 3))
     print(results_fine_tune_df)
     
-    results_fine_tune_df.to_csv(f'analysis_report_{analysis_name}/results_fine_tune.csv', index=False)
+    results_fine_tune_df.to_csv(f'{ANALYSIS_FOLDER}/results_fine_tune.csv', index=False)
     
     summaries_after_tuning = generate_summary(test_samples, 
-                                             model,
-                                             tokenizer,
-                                             encoder_max_length,
-                                             decoder_max_length)[1]
+                                                model,
+                                                tokenizer,
+                                                encoder_max_length,
+                                                decoder_max_length)[1]
     
     for i, description in enumerate(test_samples["output_sequence"]):
-      print('_'*10)
-      print(f'Original: {description}')
+        print('_'*10)
+        print(f'Original: {description}')
         
-      print('\n')
-      print(f'Summary before Tuning: {summaries_before_tuning[i]}')
-      print('\n')
-      print(f'Summary after Tuning: {summaries_after_tuning[i]}')
-      print('\n')
-      print('_'*10)
-      print('\n'*2)
-      
+        print('\n')
+        print(f'Summary before Tuning: {summaries_before_tuning[i]}')
+        print('\n')
+        print(f'Summary after Tuning: {summaries_after_tuning[i]}')
+        print('\n')
+        print('_'*10)
+        print('\n'*2)
+
     # CREATE REPORT
-    with open(f'analysis_report_{analysis_name}/results.txt', "w") as results_file:
-        
-    # Writing results for Latex
-        #results_file.write("Results Zero Shot")
-        #results_file.write('_'*10)
-        #results_file.write(r'\n')
-        #results_file.write(results_zero_shot_df)
-        
-        #results_file.write("Results Fine Tuning")
-        #results_file.write('_'*10)
-        #results_file.write(r'\n')
-        #results_file.write(results_fine_tune_df)
+    with open(f'{ANALYSIS_FOLDER}/results.txt', "w") as results_file:
         
         for i, description in enumerate(test_samples["output_sequence"]):
             results_file.write('_'*10)
@@ -354,54 +339,54 @@ def scs_analyze(analysis_name: str,
     
     
     # STORE PARAMS
-    with open(f'analysis_report_{analysis_name}/config.json', "w") as params_file:
+    with open(f'{ANALYSIS_FOLDER}/config.json', "w") as params_file:
         config_params = {'analysis_name': analysis_name, 
-                         'model_name': model_name, 
-                         'train_data_path': train_data_path, 
-                         'val_data_path':   val_data_path,
-                         'train_data_name': train_data_name,
-                         'val_data_name': val_data_name,
-                         'encoder_max_length': encoder_max_length, 
-                         'decoder_max_length': decoder_max_length,
-                         'random_state': random_state, 
-                         'learning_rate': learning_rate,
-                         'epochs': epochs, 
-                         'train_batch': train_batch, 
-                         'eval_batch': eval_batch,
-                         'warmup_steps': warmup_steps, 
-                         'weight_decay': weight_decay,
-                         'logging_stes': logging_stes,
-                         'save_total_lim': save_total_lim,
-                         'label_smooting': label_smooting,
-                         'predict_generate': predict_generate,
-                         'eval_columns_list': eval_columns_list,
-                         'save_strategy' : save_strategy,
-                         }
+                            'model_name': model_name, 
+                            'train_data_path': train_data_path, 
+                            'val_data_path':   val_data_path,
+                            'train_data_name': train_data_name,
+                            'val_data_name': val_data_name,
+                            'encoder_max_length': encoder_max_length, 
+                            'decoder_max_length': decoder_max_length,
+                            'random_state': random_state, 
+                            'learning_rate': learning_rate,
+                            'epochs': epochs, 
+                            'train_batch': train_batch, 
+                            'eval_batch': eval_batch,
+                            'warmup_steps': warmup_steps, 
+                            'weight_decay': weight_decay,
+                            'logging_stes': logging_stes,
+                            'save_total_lim': save_total_lim,
+                            'label_smooting': label_smooting,
+                            'predict_generate': predict_generate,
+                            'eval_columns_list': eval_columns_list,
+                            'save_strategy' : save_strategy,
+                            }
         json.dump(config_params, params_file)
+
         
-    return trainer
-                         
+    return trainer                 
 
 def bootstrap_inference(analysis_name: str,
-                         model_name: str, 
-                         train_data_path: str, 
-                         val_data_path:   str,
-                         train_data_name: str,
-                         val_data_names_list: list,
-                         encoder_max_length: int, 
-                         decoder_max_length: int,
-                         random_state: int, 
-                         learning_rate: float=5e-5,
-                         epochs: int=4, 
-                         train_batch: int=4, 
-                         eval_batch: int=4,
-                         warmup_steps: int=500, 
-                         weight_decay: float=0.1,
-                         logging_stes: int=100,
-                         save_total_lim: int=3,
-                         label_smooting: float = 0.1,
-                         predict_generate: bool=True,
-                         eval_columns_list: list=[
+                            model_name: str, 
+                            train_data_path: str, 
+                            val_data_path:   str,
+                            train_data_name: str,
+                            val_data_names_list: list,
+                            encoder_max_length: int, 
+                            decoder_max_length: int,
+                            random_state: int, 
+                            learning_rate: float=5e-5,
+                            epochs: int=4, 
+                            train_batch: int=4, 
+                            eval_batch: int=4,
+                            warmup_steps: int=500, 
+                            weight_decay: float=0.1,
+                            logging_stes: int=100,
+                            save_total_lim: int=3,
+                            label_smooting: float = 0.1,
+                            predict_generate: bool=True,
+                            eval_columns_list: list=[
                                 "eval_loss",
                                 "eval_rouge1",
                                 "eval_rouge2",
@@ -410,13 +395,14 @@ def bootstrap_inference(analysis_name: str,
                                 "eval_bleu",
                                 "eval_gen_len",
                             ],
-                         save_strategy='no',
-                         load_best_model_at_end=True,
-                         evaluate_only=False,
-                       **kwargs): 
-                         
+                            save_strategy='no',
+                            load_best_model_at_end=True,
+                            evaluate_only=False,
+                        **kwargs): 
+                        
     # CREATE ANALYSIS FOLDER
-    os.mkdir(f'analysis_report_{analysis_name}')
+    ANALYSIS_FOLDER=f'reports/analysis_report_{analysis_name}'
+    os.mkdir(ANALYSIS_FOLDER)
     print(analysis_name)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -427,16 +413,16 @@ def bootstrap_inference(analysis_name: str,
         
     elif model_name=='CodeTrans':
         model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"
-                         
+                    
     model = AutoModelWithLMHead.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
     model.to(device)
     print(device)
     
     train_dataset = load_dataset("json",
-                             data_files=train_data_name,
-                             field="data",
-                             data_dir=train_data_path)
+                            data_files=train_data_name,
+                            field="data",
+                            data_dir=train_data_path)
 
                                 
     train_data_txt = train_dataset['train']
@@ -477,7 +463,7 @@ def bootstrap_inference(analysis_name: str,
     
         
         training_args = Seq2SeqTrainingArguments(
-            output_dir=f"analysis_report_{analysis_name}/results",
+            output_dir=f"{ANALYSIS_FOLDER}/results",
             num_train_epochs=epochs,
             do_train=True,
             do_eval=True,
@@ -488,7 +474,7 @@ def bootstrap_inference(analysis_name: str,
             weight_decay=weight_decay,
             label_smoothing_factor=label_smooting,
             predict_with_generate=predict_generate,
-            logging_dir=f"analysis_report_{analysis_name}/logs",
+            logging_dir=f"{ANALYSIS_FOLDER}/logs",
             logging_steps=logging_stes,
             save_total_limit=save_total_lim,
             report_to=None,
@@ -532,3 +518,53 @@ def bootstrap_inference(analysis_name: str,
     results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_bootstrap.csv', index=True)
     
     
+def parse_logs(trainer):
+    log_history = trainer.state.log_history
+    train_log = pd.DataFrame(columns=log_history[0].keys())
+    eval_log = pd.DataFrame(columns=log_history[1].keys())
+    for log in log_history:
+        if "loss" in log:
+            train_log = pd.concat(
+                [train_log, pd.DataFrame.from_dict(log, orient="index").T], axis=0
+            )
+        elif "eval_loss" in log:
+            eval_log = pd.concat(
+                [eval_log, pd.DataFrame.from_dict(log, orient="index").T], axis=0
+            )
+
+    logs = train_log.merge(
+        eval_log,
+        how="inner",
+        left_on=["epoch", "step"],
+        right_on=["epoch", "step"],
+    )
+    return logs[
+        [
+            "epoch",
+            "loss",
+            "step",
+            "eval_loss",
+            "eval_rouge1",
+            "eval_rouge2",
+            "eval_rougeL",
+            "eval_rougeLsum",
+            "eval_gen_len",
+            "eval_bleu",
+            "eval_brevity_penalty",
+            "eval_length_ratio",
+            "eval_translation_length",
+            "eval_reference_length",
+        ]
+    ]
+
+def create_name(analysis_config):
+    name = analysis_config["model_name"]
+    if "checkpoint" in name:
+        name = name.split("/")[-1]
+    mode = analysis_config["MODE"]
+    date = analysis_config["DATE"]
+    if analysis_config["val_data_name"].startswith("val"):
+        sample = "val"
+    else:
+        sample = "test"
+    return f"{name}_{mode}_{sample}_{date}"
