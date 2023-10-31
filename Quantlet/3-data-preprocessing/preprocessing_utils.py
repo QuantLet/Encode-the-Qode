@@ -221,25 +221,25 @@ def add_docstring_comment_tags_matlab(string):
 
 def add_docstring_comment_tags(string, lang):
     if lang=='py':
-       result = add_docstring_comment_tags_py(string)
+        result = add_docstring_comment_tags_py(string)
     elif lang=='m':
-       result = add_docstring_comment_tags_matlab(string)
+        result = add_docstring_comment_tags_matlab(string)
     elif lang=='r':
-       result = add_docstring_comment_tags_r(string)
+        result = add_docstring_comment_tags_r(string)
     return result
 
 # remove duplicate lines
 def remove_dup_lines(row):
-  cleaned_up = []
-  codes_list = row.split('\n')
-  for cl in codes_list:
-    if cl in cleaned_up:
-      continue
-    else:
-      cleaned_up.append(cl)
+    cleaned_up = []
+    codes_list = row.split('\n')
+    for cl in codes_list:
+        if cl in cleaned_up:
+            continue
+        else:
+            cleaned_up.append(cl)
 
-  return '\n'.join(cleaned_up)
-  
+    return '\n'.join(cleaned_up)
+
 def remove_too_similar_line(row, inf_gain=0.4):
     code_splitted = row.split('\n')
     cleaned_up = []
@@ -248,7 +248,10 @@ def remove_too_similar_line(row, inf_gain=0.4):
             cleaned_up.append(code_line)
         else:
             levenshtein_distance = distance(code_line, cleaned_up[-1])
-            if levenshtein_distance / len(cleaned_up[-1])>=inf_gain:
+            try:
+                if levenshtein_distance / len(cleaned_up[-1])>=inf_gain:
+                    cleaned_up.append(code_line)
+            except ZeroDivisionError:
                 cleaned_up.append(code_line)
     return '\n'.join(cleaned_up)
 
@@ -294,10 +297,10 @@ def df_metainfo_parse(df,
         
         meta_info = pd.DataFrame(columns=COLUMNS)
         meta_info[COLUMNS] = df.apply(
-          lambda x: parse_meta(x),
-              axis='columns',
-              result_type='expand'
-          )
+            lambda x: parse_meta(x),
+                axis='columns',
+                result_type='expand'
+            )
 
         for col in meta_info.columns:
             meta_info[col] = meta_info[col].astype(str)
@@ -325,8 +328,9 @@ def df_metainfo_parse(df,
     return df
 
 def clean_up(df): 
-    # ANALYZE LENGTH OF THE CODE SNIPPET
-    df['code_len'] = df['code_script'].progress_apply(len)
+    
+    # EXTEND THE SNIPPETS 
+    df['code_script'] = df['code_script'].progress_apply(extend_tokens)
 
     # REMOVE CODE LINE DUPLICATES
     df['code_script'] = df['code_script'].progress_apply(remove_dup_lines)
@@ -495,3 +499,32 @@ def save_datasets(train, val, test, DATE, RS):
             "w",
         ) as f:
             json.dump(test_dataset_json, f)
+
+# Chunk code snippets
+def chunk_code(code_snippet: str, chunk_size:int) -> list:
+    words = code_snippet.split(' |\n')
+    chunks = []
+    current_chunk = ''
+    for word in words:
+        if len(current_chunk) + len(word) <= chunk_size:
+            current_chunk += word + ' '
+        else:
+            chunks.append(current_chunk)
+            current_chunk = word + ' '
+    if current_chunk:
+        chunks.append(current_chunk)
+    return [*enumerate(chunks)]
+
+def camel_case_split(word):
+    return re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', word)).split()
+
+def snake_case_split(text): 
+    return text.replace('_', ' ')
+
+def extend_tokens(code_snippet): 
+    code_snippet = snake_case_split(code_snippet)
+    cleaned_cs = []
+    for word in code_snippet.split():
+        cleaned_cs.extend(camel_case_split(word))
+    code_snippet = ' '.join(cleaned_cs)    
+    return code_snippet
