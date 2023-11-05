@@ -363,7 +363,7 @@ def combine_url(row):
     )
     return url
 
-def save_datasets(full_train, train, val, test, DATE, RS, variable, save_df=False):
+def save_datasets(full_train, train, val, test, DATE, RS, variable, reduced=False, save_df=False):
     if save_df:
         full_train.to_csv(
         f"../../data/preprocessed/Quantlet/{DATE}/full_train_df_{DATE}_sample0.csv",
@@ -379,28 +379,28 @@ def save_datasets(full_train, train, val, test, DATE, RS, variable, save_df=Fals
             f"../../data/preprocessed/Quantlet/{DATE}/test_df_{DATE}_sample0.csv", index=False
         )
 
+    if not reduced:
+        print(train.shape)
+        print(train["type_script"].value_counts(normalize=True))
+        print(val.shape)
+        print(val["type_script"].value_counts(normalize=True))
+        print(test.shape)
+        print(test["type_script"].value_counts(normalize=True))
 
-    print(train.shape)
-    print(train["type_script"].value_counts(normalize=True))
-    print(val.shape)
-    print(val["type_script"].value_counts(normalize=True))
-    print(test.shape)
-    print(test["type_script"].value_counts(normalize=True))
-
-    print(train.shape)
-    print(train["type_script"].value_counts(normalize=False))
-    print(val.shape)
-    print(val["type_script"].value_counts(normalize=False))
-    print(test.shape)
-    print(test["type_script"].value_counts(normalize=False))
+        print(train.shape)
+        print(train["type_script"].value_counts(normalize=False))
+        print(val.shape)
+        print(val["type_script"].value_counts(normalize=False))
+        print(test.shape)
+        print(test["type_script"].value_counts(normalize=False))
     
     
     
-    for MODE in ["no_context", "author", "repo"]:
+    for MODE in ["no_context", "author", "repo"]: #, 
         
         if not os.path.isdir(f"../../data/preprocessed/Quantlet/{DATE}/{MODE}"):
             os.mkdir(f"../../data/preprocessed/Quantlet/{DATE}/{MODE}")
-            
+
         # FIX NA
         test.loc[test["Quantlet"].isna(), "Quantlet"] = "XFGexp_rtn_SRM_2d_DOENST RUN"
         train["Authors"] = train["Authors"].fillna("Unknown")

@@ -72,3 +72,5 @@ Quantlet/5-domain-pre-training/arxiv_data.csv
 Quantlet/5-domain-pre-training/arxiv_data_210930-054931.csv
 Quantlet/4-qode2desc/reports/
 data/preprocessed/old
+Quantlet/5-domain-pre-training/reports/
+.conda

@@ -103,8 +103,8 @@ def compute_metric_with_params(tokenizer, metrics_list=['rouge', 'bleu']):
     
             if m=='bleu':
                 result = metric.compute(
-                  predictions=decoded_preds, references=decoded_labels
-               )
+                    predictions=decoded_preds, references=decoded_labels
+                )
             elif m=='rouge':
                 result = metric.compute(
                     predictions=decoded_preds, references=decoded_labels, use_stemmer=True
@@ -179,11 +179,15 @@ def scs_analyze(analysis_name: str,
     
     if model_name=='CodeT5':
         model_name="Salesforce/codet5-base-multi-sum"
+        #model_name="Salesforce/codet5-base-codexglue-sum-python"
         
     elif model_name=='CodeTrans':
-        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"                     
+        model_name="SEBIS/code_trans_t5_base_source_code_summarization_python_multitask"  
+
+    
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name, skip_special_tokens=False)
+    
     if freeze:
         for parameter in model.parameters():
             parameter.requires_grad = False

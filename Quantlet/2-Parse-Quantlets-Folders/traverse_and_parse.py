@@ -15,7 +15,7 @@ def traverse_folder(path, file_types):
     for i, (root, directories, files) in tqdm(enumerate(os.walk(path))):
 
             if '.git' in root:
-                 continue
+                continue
             #print(f'Processing {i} folder: {root}...')
 
 
