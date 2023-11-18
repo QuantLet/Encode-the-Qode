@@ -75,3 +75,5 @@ data/preprocessed/old
 Quantlet/5-domain-pre-training/reports/
 .conda
 Quantlet/deprecated
+ Quantlet/4-seq2seq/conala_model_attention*
+Quantlet/4-seq2seq/conala_model_attention*
