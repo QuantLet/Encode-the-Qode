@@ -335,7 +335,7 @@ def scs_analyze(analysis_name: str,
         
         for i, description in enumerate(test_samples["output_sequence"]):
             results_file.write('_'*10)
-            results_file.write(f'Original: {description}')
+            results_file.write(f'Original: {description.encode("utf-8")}')
             results_file.write(f'Summary before Tuning: {summaries_before_tuning[i]}')
             results_file.write(f'Summary after Tuning: {summaries_after_tuning[i]}')
             results_file.write('_'*10)
@@ -519,7 +519,7 @@ def bootstrap_inference(analysis_name: str,
     results_zero_shot_df.loc['std', :]  = results_zero_shot_df.std(axis=0)
     results_zero_shot_df.loc['std', :] = results_zero_shot_df.loc['std', :].apply(lambda x: round(x, 3))
     
-    results_zero_shot_df.to_csv(f'analysis_report_{analysis_name}/results_bootstrap.csv', index=True)
+    results_zero_shot_df.to_csv(f'{ANALYSIS_FOLDER}/results_bootstrap.csv', index=True)
     
     
 def parse_logs(trainer):
