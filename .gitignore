@@ -20,6 +20,7 @@ data/*.csv
 data/*.json
 
 data/preprocessed/Quantlet/deprecated_files
+original_models
 
 data/raw/Conala/
 data/raw/CodeSearchNet/
