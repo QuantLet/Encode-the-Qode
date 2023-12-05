@@ -1,0 +1,16 @@
+Name of Quantlet: 'EtQ data preprocessing'
+
+Published in: 'TBD'
+
+Description: 'Parsing the Quantlet metainfo files, subsequently sampling the data for further analysis. Add manipulations modalities (perturbations, operands removal etc.).'
+
+Keywords:
+- pre-processing
+- sampling
+- validation
+- yaml parsing
+- Machine Learning on Source Code
+
+Author: 'Elizaveta Zinovyeva'
+
+Submitted:  '02. Jul 2022, Elizaveta Zinovyeva'

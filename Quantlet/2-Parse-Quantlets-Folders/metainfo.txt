@@ -1,0 +1,17 @@
+Name of QuantLet : 'parse-folders-with-code'
+
+Published in : 'TBD'
+
+Description : 'Parsing folders with Quantlets and saving them into the pandas dataframe'
+
+Keywords : 
+- parsing
+- yaml
+- regex
+- preprocessing
+- transformation
+- Machine Learning on Source Code
+
+Author : 'Elizaveta Zinovyeva'
+
+Submitted : 'Saturday, November 14 2023'
