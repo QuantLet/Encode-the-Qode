@@ -39,10 +39,15 @@ import preprocessing_utils
 def batch_tokenize_preprocess(batch,
                                 tokenizer,
                                 max_input_length,
-                                max_output_length):
+                                max_output_length,
+                                flan=False):
+    
 
     source = batch["input_sequence"]
     target = batch["output_sequence"]
+
+    if flan: 
+        source = ["summarize code: " + snippet for snippet in source]
 
     source_tokenized = tokenizer(
         source,
@@ -204,22 +209,30 @@ def scs_analyze(analysis_name: str,
                             data_files=train_data_name,
                             field="data",
                             data_dir=train_data_path)
+    
 
     test_dataset = load_dataset("json",
                                 data_files=val_data_name,
                                 field="data",
                                 data_dir=val_data_path)
+
                                 
     train_data_txt = train_dataset['train']
         
     validation_data_txt = test_dataset['train']
-    
+
+    if "flan-t5-base" in model_name:
+        flan=True
+    else:
+        flan=False
+
     train_data = train_data_txt.map(
         lambda batch: batch_tokenize_preprocess(
             batch, 
             tokenizer=tokenizer,
             max_input_length=encoder_max_length,
-            max_output_length=decoder_max_length
+            max_output_length=decoder_max_length,
+            flan=flan
         ),
         batch_size=8,
         batched=True,
@@ -231,12 +244,12 @@ def scs_analyze(analysis_name: str,
             batch, 
             tokenizer=tokenizer,
             max_input_length=encoder_max_length,
-            max_output_length=decoder_max_length
+            max_output_length=decoder_max_length,
+            flan=flan
         ),
         batched=True,
         remove_columns=validation_data_txt.column_names,
     )
-    
     
     # SUBSAMPLE FOR GENERATION BEFORE TUNING
     test_samples = validation_data_txt.select(range(20))
