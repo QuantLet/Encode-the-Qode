@@ -1,6 +1,6 @@
 Name of QuantLet : 'parse-folders-with-code'
 
-Published in : 'TBD'
+Published in : 'Towards Code Summarization for Domain Experts on Scarce Data'
 
 Description : 'Parsing folders with Quantlets and saving them into the pandas dataframe'
 

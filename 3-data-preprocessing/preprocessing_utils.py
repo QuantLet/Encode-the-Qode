@@ -1,3 +1,5 @@
+"""Helper functions to preprocess code snippets and metainfo files"""
+
 from Levenshtein import distance
 import os
 import json
@@ -27,7 +29,9 @@ def check_if_import(code_snippet, language='py'):
         
     return is_import
 
-def load_script(code_script_path):
+def load_script(code_script_path: str) -> list:
+
+    """Load the code script line by line"""
 
     with open(os.path.join(code_script_path), 'rb') as f:
         code = f.readlines()
@@ -38,15 +42,14 @@ def load_script(code_script_path):
             new_code.append(line.decode())
         except Exception as e:
             print(f"Could not laod the script because of {e} ")
+
     code = new_code    
-    #code = [line.decode() for line in code]
     code = [item.replace('\n', '') for item in code if item.endswith('\n')]
     code = [item for item in code if len(item)>0]
     code = [f'{item}\n' for item in code]
-    #code = ''.join(code)
     return code
 
-def load_ipynb(code_script_path):
+def load_ipynb(code_script_path: str) -> list:
 
     """Load ipynb file and return a list of code snippets"""
 
@@ -64,13 +67,9 @@ def load_ipynb(code_script_path):
     data = [item for item in data if len(item)>0]
 
     data = [f'{item}\n' for item in data]
-    #data = ' \n'.join(data)
-    #data = tokenize_block(data)
-    #data = ''.join(data)
-    
     return data
 
-def load_code(code_script_path, language='py'):
+def load_code(code_script_path:str, language:str='py') -> list:
     
     """Load code from file and return a list of code snippets"""
     if language == 'py':
@@ -100,7 +99,8 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     
-def parse_meta_str(row):
+def parse_meta_str(row:str) -> list:
+    """ Parses metainfo file when loaded as string"""
     row = row.replace('NW: ', '')
     other = {}
     field_list = row.split("\n")
@@ -123,8 +123,8 @@ def parse_meta_str(row):
             other[field_name] = field_value
     return [name, desc, key, aut, other]
     
-def parse_meta_dict(row):
-
+def parse_meta_dict(row:dict) -> list:
+    """ Parses metainfo file when loaded as dictionary"""
     dict_keys = list(row.keys())
     dict_key_n = [k.lower() for k in dict_keys]
     name_idx = np.where(['name' in k for k in dict_key_n])[0]
@@ -159,7 +159,8 @@ def parse_meta_dict(row):
     other = {k: row[k] for k in dict_keys if k not in dict_keys_used}
     return [name, desc, key, aut, other]
 
-def parse_meta(row): 
+def parse_meta(row:pd.Series) -> list: 
+    """ Parses the row in pandas dataframe. Should  """
     
     row = row['metainfo_file']
     if row=='empty':
@@ -171,7 +172,9 @@ def parse_meta(row):
         metainfo_list = parse_meta_str(row)
     return metainfo_list
 
-def explode_code_and_lang(df):
+def explode_code_and_lang(df:pd.DataFrame) -> pd.DataFrame:
+    """ Creates a long pandas by turing the list of code snippets to separate rows"""
+
     new_df = pd.DataFrame()
 
     print(f'Shape before exploding scripts: {df.shape}')

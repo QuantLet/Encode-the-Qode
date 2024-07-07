@@ -1,6 +1,6 @@
 Name of Quantlet: 'load_data_from_git'
 
-Published in: 'TBD'
+Published in: 'Towards Code Summarization for Domain Experts on Scarce Data'
 
 Description: 'This script loads the quantlets from LvB organization on Github. You need to provide your API token a token.txt file'
 

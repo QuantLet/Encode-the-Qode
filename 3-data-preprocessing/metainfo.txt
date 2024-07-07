@@ -1,6 +1,6 @@
-Name of Quantlet: 'EtQ data preprocessing'
+Name of Quantlet: 'Data preprocessing'
 
-Published in: 'TBD'
+Published in: 'Towards Code Summarization for Domain Experts on Scarce Data'
 
 Description: 'Parsing the Quantlet metainfo files, subsequently sampling the data for further analysis. Add manipulations modalities (perturbations, operands removal etc.).'
 
@@ -13,4 +13,4 @@ Keywords:
 
 Author: 'Elizaveta Zinovyeva'
 
-Submitted:  '02. Jul 2022, Elizaveta Zinovyeva'
+Submitted:  '02. Jul 2021, Elizaveta Zinovyeva'
