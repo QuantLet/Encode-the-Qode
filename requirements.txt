@@ -6,3 +6,4 @@ PyGithub
 scikit-learn
 scipy
 seaborn
+levenshtein

@@ -1,0 +1,16 @@
+Name of Quantlet: 'Modeling Experiments'
+
+Published in: 'Towards Code Summarization for Domain Experts on Scarce Data'
+
+Description: 'Performs training, inference of Code-2-text models (CodeT5, CodeTrans, Seq2seq) and statistical tests on Quantlet data'
+
+Keywords:
+- transformers
+- language models
+- code summarization
+- statistical hypotheses testing
+- Machine Learning on Source Code
+
+Author: 'Elizaveta Zinovyeva'
+
+Submitted:  'Elizaveta Zinovyeva'
