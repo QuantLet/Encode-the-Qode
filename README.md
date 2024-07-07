@@ -7,8 +7,8 @@ This repo contains the Experiments 1-4 from the paper, as well as the code to lo
 
 
 - Codes separated into quantlets: 
-## ![qlogo](static/q.png) **[Obtaining the Quantlet Data](1-Load-Quantlet-Data-From-Git)**
-## ![qlogo](static/q.png) **[Data Parsing](2-Parse-Quantlets-Folders)**
-## ![qlogo](static/q.png) **[Further Data Preparation](3-data-preprocessing)**
-## ![qlogo](static/q.png) **[Experiments and Code-2-Text Training/Fine-tuning](4-modeling-experiments)**
+## ![qlogo](static/q.png=20x20) **[Obtaining the Quantlet Data](1-Load-Quantlet-Data-From-Git)**
+## ![qlogo](static/q.png=20x20) **[Data Parsing](2-Parse-Quantlets-Folders)**
+## ![qlogo](static/q.png=20x20) **[Further Data Preparation](3-data-preprocessing)**
+## ![qlogo](static/q.png=20x20) **[Experiments and Code-2-Text Training/Fine-tuning](4-modeling-experiments)**
 
