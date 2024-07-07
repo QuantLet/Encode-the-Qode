@@ -6,7 +6,7 @@
 This repo contains the Experiments 1-4 from the paper, as well as the code to load and preprocess the Quantlet data for them.
 
 
-- Codes separated into quantlets: 
+### Codes separated into quantlets: 
 
 ## **[Obtaining the Quantlet Data](1-Load-Quantlet-Data-From-Git)**
 ## **[Data Parsing](2-Parse-Quantlets-Folders)**
