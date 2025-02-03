@@ -1,0 +1,17 @@
+Name of Quantlet: Q-Visualize-Unknown
+
+Published in: Towards Code Summarization for Domain Experts on Scarce Data
+
+Description: Visualization (clustering and topic modeling) of Quantlet data, identification of inknown
+
+Keywords: 
+- keywords
+- topic modeling
+- code summarization
+- scatter plot
+- visualization
+- Machine Learning on Source Code
+
+Author: Elizaveta Zinovyeva
+
+Submitted: Elizaveta Zinovyeva
